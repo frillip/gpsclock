@@ -1,0 +1,36 @@
+uint8_t t10ms=0;
+uint8_t t10ms0=0;
+uint8_t t100ms=0;
+uint8_t t100ms0=0;
+uint8_t t100ms1=0;
+uint8_t t1s0=0;
+uint8_t t1s1=0;
+
+#IFDEF PPS
+#INT_EXT
+void pps_interrupt(void)
+{
+	time.second_100=0;
+}
+#ENDIF
+
+#INT_TIMER3
+void scheduler(void)
+{
+	set_timer3(-20000);
+	t10ms++;
+	t10ms0++;
+	if(t10ms==10)
+	{
+		t10ms=0;
+		t100ms++;
+		t100ms0++;
+		t100ms1++;
+		if(t100ms==10)
+		{
+			t100ms=0;
+			t1s0++;
+			t1s1++;
+		}
+	}
+}
