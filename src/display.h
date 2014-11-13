@@ -13,14 +13,24 @@ void update_display0(void)
 	output_low(DISP0_SS);
 	#asm nop #endasm
 
-	// Hours (1-2 digit)
-	spi_write(time.hour/10);
-	spi_write(time.hour%10);
-
-	// Minutes
-	spi_write(time.minute/10);
-	spi_write(time.minute%10);
-
+	if(display_mode==0)		// HHMMSSss
+	{
+		// Hours
+		spi_write(time.hour/10);
+		spi_write(time.hour%10);
+	
+		// Minutes
+		spi_write(time.minute/10);
+		spi_write(time.minute%10);
+	}
+	else if(display_mode==1)		// YYYYMMDD
+	{
+		// Years
+		spi_write(time.year/1000);
+		spi_write((time.year%1000)/100);
+		spi_write((time.year%100)/10);
+		spi_write(time.year%10);
+	}
 	// Deselect display
 	#asm nop #endasm
 	output_high(DISP0_SS);
@@ -31,14 +41,25 @@ void update_display1(void)
 	output_low(DISP1_SS);
 	#asm nop #endasm
 
-	// Seconds (1-2 digit)
-	spi_write(time.second/10);
-	spi_write(time.second%10);
-
-	// Hundreths of a second
-	spi_write(time.second_100/10);
-	spi_write(time.second_100%10);
-
+	if(display_mode==0)		// HHMMSSss
+	{
+		// Seconds
+		spi_write(time.second/10);
+		spi_write(time.second%10);
+	
+		// Hundreths of a second
+		spi_write(time.second_100/10);
+		spi_write(time.second_100%10);
+	}
+	else if(display_mode==1)		// YYYYMMDD
+	{
+		// Months
+		spi_write(time.month/10);
+		spi_write(time.month%10);
+		// Days
+		spi_write(time.day/10);
+		spi_write(time.day%10);
+	}
 	// Deselect display
 	#asm nop #endasm
 	output_high(DISP1_SS);

@@ -95,7 +95,7 @@ void process_command(void)
 		fprintf(COM1, "Resetting...\r\n");
 		write_eeprom(EEPROM_RESET,0x42);			// Write reset flag
 		write_eeprom(EEPROM_YEAR,(time.year>>8));
-		write_eeprom(EEPROM_YEAR+1,(time.year&&0x00FF));
+		write_eeprom(EEPROM_YEAR+1,(time.year&0x00FF));
 		write_eeprom(EEPROM_MONTH,time.month);
 		write_eeprom(EEPROM_DAY,time.day);
 		write_eeprom(EEPROM_HOUR,time.hour);

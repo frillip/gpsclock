@@ -10,9 +10,27 @@
 #define DISP0_SS PIN_B4	// SS pin for display 0
 #define DISP1_SS PIN_B5	// SS pin for display 1
 
+typedef struct {
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+	uint8_t second_100;
+} elapsed;
+
+typedef struct {
+	int8_t hour;
+	int8_t minute;
+} offset;
+
+elapsed time = {0,0,0,0,0,0,0};
+offset timezone = {0,0};
+
+#include "display.h"
 #include "wallclock.h"
 #include "scheduler.h"
-#include "display.h"
 #include "remote.h"
 #include "gps.h"
 
@@ -25,8 +43,9 @@ void main(void)
 	setup_timer_2(T2_DIV_BY_1, 0x28, 1);		// Our SPI 7 segment displays only operate up to 250kHz, so we have to set up the SPI clock using timer2
 	setup_timer_3(T3_INTERNAL | T3_DIV_BY_8);	// Set up scheduler timer
 #IFDEF PPS
-	enable_interrupts(INT_EXT_L2H);
+	enable_interrupts(INT_EXT_L2H);				// PPS interrut
 #ENDIF
+	enable_interrupts(INT_EXT1);				// GPS fix interrupt
 	enable_interrupts(INT_RDA);					// Enable AT command serial interrupt
 	enable_interrupts(INT_RDA2);				// Enable GPS serial interrupt
 	enable_interrupts(INT_TIMER3);				// Enable scheduler timer interrupt
@@ -34,6 +53,9 @@ void main(void)
 
 	if(read_eeprom(EEPROM_RESET)==0x42)
 	{
+		time.year=((uint16_t)read_eeprom(EEPROM_YEAR)<<8)|((uint16_t)read_eeprom(EEPROM_YEAR+1));
+		time.month=read_eeprom(EEPROM_MONTH);
+		time.day=read_eeprom(EEPROM_DAY);
 		time.hour=read_eeprom(EEPROM_HOUR);
 		time.minute=read_eeprom(EEPROM_MINUTE);
 		time.second=read_eeprom(EEPROM_SECOND);
@@ -65,9 +87,8 @@ void main(void)
 		{
 			t10ms0=0;
 			if(command_waiting) process_command();
-			if(gpzda_waiting) process_gpzda();
+			if((gps_fix)&&(gpzda_waiting)) process_gpzda();
 			wallclock_inc_sec_100();
-			if(display_mode==0) update_display1();
 		}
 		if(t100ms0==1)
 		{

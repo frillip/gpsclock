@@ -7,6 +7,22 @@ char gpzda_buffer[26];
 boolean checksum_error=0;
 boolean gpzda_incoming=FALSE;
 boolean gpzda_waiting=FALSE;
+boolean gps_fix=0;
+
+#IFDEF PPS
+#INT_EXT
+void pps_interrupt(void)
+{
+	time.second_100=0;
+	wallclock_inc_second();
+}
+#ENDIF
+
+#INT_EXT1
+void check_fix(void)
+{
+	gps_fix=input(PIN_B1);
+}
 
 #INT_RDA2
 void gpzda_message(void)
