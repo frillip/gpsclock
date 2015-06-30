@@ -1,7 +1,7 @@
-//////// Standard Header file for the PIC18F26K80 device ////////////////
-#device PIC18F26K80
+//////// Standard Header file for the PIC18F25K80 device ////////////////
+#device PIC18F25K80
 #nolist
-//////// Program memory: 32768x16  Data RAM: 3648  Stack: 31
+//////// Program memory: 16384x16  Data RAM: 3648  Stack: 31
 //////// I/O: 24   Analog Pins: 8
 //////// Data EEPROM: 1024
 //////// C Scratch area: 00   ID Location: 200000

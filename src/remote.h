@@ -39,7 +39,7 @@ void remote_command(void)
 	command[command_offset]=fgetc(COM1);
 	if(command[command_offset]==0xff)
 	{
-		delay_ms(10);
+		delay_us(100);
 		reset_cpu();
 	}
 	fprintf(COM1,"%c", command[command_offset]);
@@ -64,7 +64,7 @@ void remote_command(void)
 			memset(command, 0, sizeof(command_buffer));
 			memset(command, 0, sizeof(command));
 			command_offset=0;
-			fprintf(COM1, "Overflow!\r\n");
+			fprintf(COM1, "!\r\n");
 		}
 	}
 	else
@@ -103,6 +103,24 @@ void process_command(void)
 		write_eeprom(EEPROM_SECOND,time.second);	// Write current time to EEPROM
 		delay_ms(10);
 		reset_cpu();
+	}
+	else if(strncmp(command_buffer,"TIME",4))
+	{
+		if(command_buffer[9])
+		{
+			time.second=(((uint8_t)command_buffer[8]-48)*10)+((uint8_t)command_buffer[9]-48);
+			time.second_100=0;
+//			set_timer1(-32768);
+		}
+		if(command_buffer[7])
+		{
+			time.minute=(((uint8_t)command_buffer[6]-48)*10)+((uint8_t)command_buffer[7]-48);
+			time.hour=(((uint8_t)command_buffer[4]-48)*10)+((uint8_t)command_buffer[5]-48);
+			update_display0();
+			update_display1();
+		}
+		remote_feedback();
+		command_complete=TRUE;
 	}
 	if(command_complete) fprintf(COM1,"OK\r\n");
 	memset(command_buffer, 0, sizeof(command_buffer));

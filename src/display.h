@@ -3,7 +3,7 @@ void update_display0(char);
 void update_display1(char);
 void toggle_colon(void);
 
-#define DISP_BRIGHTEST 0x00
+#define DISP_BRIGHTEST 0xFF
 
 boolean colon_state=FALSE;
 boolean display_mode=0;
@@ -78,62 +78,81 @@ void init_display(void)
 	// Reset display0, turn on colon
 	output_low(DISP0_SS);
 	#asm nop #endasm
+	spi_write(0x82);
+	spi_write(0x00);
 	// reset
 	spi_write(0x76);
 	// dots
 	spi_write(0x77);
 	// colon
-	spi_write(0x10);
+	spi_write(0x02);
 	// max brightness
 	spi_write(0x7A);
 	spi_write(DISP_BRIGHTEST);
 	#asm nop #endasm
 	output_high(DISP0_SS);
 
-	// eset display1, turn on colon
+	// Reset display1, turn on colon
 	output_low(DISP1_SS);
 	#asm nop #endasm
+	spi_write(0x82);
+	spi_write(0x00);
 	// reset
 	spi_write(0x76);
 	// dots
 	spi_write(0x77);
 	// colon
-	spi_write(0x10);
+	spi_write(0x02);
 	// max brightness
 	spi_write(0x7A);
 	spi_write(DISP_BRIGHTEST);
 	#asm nop #endasm
 	output_high(DISP1_SS);
 
-	// Fill with initial time (force)
+	// fill with initial time (force)
+	output_low(DISP0_SS);
+	#asm nop #endasm
+	spi_write(0x76);
+	#asm nop #endasm
+	output_high(DISP0_SS);
+	delay_us(10);
 	update_display0();
+
+	output_low(DISP1_SS);
+	#asm nop #endasm
+	spi_write(0x76);
+	#asm nop #endasm
+	output_high(DISP1_SS);
+	delay_us(10);
 	update_display1();
 }
 
 void toggle_colon(void)
 {
-	colon_state = ! colon_state;
-
-	// Display0
-	output_low(DISP0_SS);
-	#asm nop #endasm
-	// Dots
-	spi_write(0x77);
-	// Colon or no colon
-	spi_write((uint8_t)colon_state<<4);
-	// Deselect display
-	#asm nop #endasm
-	output_high(DISP0_SS);
-
-	// Display1
-	output_low(DISP1_SS);
-	#asm nop #endasm
-	// Dots
-	spi_write(0x77);
-	// Colon or no colon
-	spi_write((uint8_t)colon_state<<4);
-	// Deselect display
-	#asm nop #endasm
-	output_high(DISP1_SS);
+	if(display_mode==0)
+	{
+		colon_state = ! colon_state;
+		// Display0
+		output_low(DISP0_SS);
+		#asm nop #endasm
+		// Dots
+		spi_write(0x77);
+		// Colon or no colon
+		spi_write(((uint8_t)colon_state<<1)|((uint8_t)colon_state<<3));
+		// Deselect display
+		#asm nop #endasm
+		output_high(DISP0_SS);
+	
+		// Display1
+		output_low(DISP1_SS);
+		#asm nop #endasm
+		// Dots
+		spi_write(0x77);
+		// Colon or no colon
+		spi_write((uint8_t)colon_state<<1);
+		// Deselect display
+		#asm nop #endasm
+		output_high(DISP1_SS);
+	}
 }
 

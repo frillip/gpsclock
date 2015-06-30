@@ -13,7 +13,6 @@ boolean gps_fix=0;
 #INT_EXT
 void pps_interrupt(void)
 {
-	time.second_100=0;
 	wallclock_inc_second();
 }
 #ENDIF
