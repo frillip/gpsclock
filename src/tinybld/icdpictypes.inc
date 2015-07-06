@@ -290,6 +290,16 @@ IdTypePIC = 0x50
 IdTypePIC = 0x50
 		#define max_flash 0x10000
 	ENDIF
+	IFDEF __18F25K80
+		#include "p18f25k80.inc"
+IdTypePIC = 0x51
+		#define max_flash 0x8000
+	ENDIF
+	IFDEF __18F45K80
+		#include "p18f45k80.inc"
+IdTypePIC = 0x51
+		#define max_flash 0x8000
+	ENDIF
 
 ;---------------- USB ------------------------------
 

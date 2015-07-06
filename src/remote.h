@@ -12,7 +12,7 @@ boolean command_complete=FALSE;
 
 void remote_feedback(void)
 {
-	fprintf(COM1,"\r\n%02u:%02u:%02u\r\n",time.hour,time.minute,time.second);
+	fprintf(COM1,"\r\n%04lu/%02u/%02u %02u:%02u:%02u\r\n",time.year,time.month,time.day,time.hour,time.minute,time.second);
 }
 
 uint8_t strcmp(unsigned char *s1, unsigned char *s2)
@@ -116,6 +116,19 @@ void process_command(void)
 		{
 			time.minute=(((uint8_t)command_buffer[6]-48)*10)+((uint8_t)command_buffer[7]-48);
 			time.hour=(((uint8_t)command_buffer[4]-48)*10)+((uint8_t)command_buffer[5]-48);
+			update_display0();
+			update_display1();
+		}
+		remote_feedback();
+		command_complete=TRUE;
+	}
+else if(strncmp(command_buffer,"DATE",4))
+	{
+		if(command_buffer[11])
+		{
+			time.day=(((uint8_t)command_buffer[10]-48)*10)+((uint8_t)command_buffer[11]-48);
+			time.month=(((uint8_t)command_buffer[8]-48)*10)+((uint8_t)command_buffer[9]-48);
+			time.year=(((uint16_t)command_buffer[4]-48)*1000)+(((uint16_t)command_buffer[5]-48)*100)+(((uint16_t)command_buffer[6]-48)*10)+((uint16_t)command_buffer[7]-48);
 			update_display0();
 			update_display1();
 		}

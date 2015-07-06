@@ -1,5 +1,5 @@
 	radix DEC
-	; LIST      P=18F26K80	; change also: Configure->SelectDevice from Mplab 
+	; LIST      P=18F25K80	; change also: Configure->SelectDevice from Mplab 
 xtal EQU 64000000		; you may want to change: _XT_OSC_1H  _HS_OSC_1H  _HSPLL_OSC_1H
 baud EQU 115200			; standard TinyBld baud rates: 115200 or 19200
 	; The above 3 lines can be changed and buid a bootloader for the desired frequency (and PIC type)
@@ -16,7 +16,7 @@ baud EQU 115200			; standard TinyBld baud rates: 115200 or 19200
 	#define first_address max_flash-200		;100 words
 
     
-		__CONFIG  _CONFIG1L , _RETEN_OFF_1L & _XINST_OFF_1L & _INTOSCSEL_HIGH_1L & _SOSCSEL_LOW_1L
+		__CONFIG  _CONFIG1L , _RETEN_OFF_1L & _XINST_OFF_1L & _INTOSCSEL_HIGH_1L & _SOSCSEL_DIG_1L
 		__CONFIG  _CONFIG1H , _FOSC_HS2_1H & _PLLCFG_ON_1H & _IESO_ON_1H
 		__CONFIG  _CONFIG2L , _BOREN_SBORDIS_2L & _PWRTEN_ON_2L & _BORV_3_2L & _BORPWR_ZPBORMV_2L
 		__CONFIG  _CONFIG2H , _WDTEN_ON_2H & _WDTPS_128_2H
@@ -84,6 +84,7 @@ IntrareBootloader
 	SendL IdTypePIC			;send PIC type
 MainLoop
 	SendL 'K'				; "-Everything OK, ready and waiting."
+	CLRWDT
 mainl
 	clrf crc
 	rcall Receive			;Upper

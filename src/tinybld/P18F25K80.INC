@@ -1,7 +1,7 @@
         LIST
 
 ;==========================================================================
-;  MPASM PIC18F26K80 processor include
+;  MPASM PIC18F25K80 processor include
 ; 
 ;  (c) Copyright 1999-2011 Microchip Technology, All rights reserved
 ;==========================================================================
@@ -10,16 +10,16 @@
 
 ;==========================================================================
 ;  This header file defines configurations, registers, and other useful
-;  bits of information for the PIC18F26K80 microcontroller.  These names
+;  bits of information for the PIC18F25K80 microcontroller.  These names
 ;  are taken to match the data sheets as closely as possible.
 ;
 ;  Note that the processor must be selected before this file is included.
 ;  The processor may be selected the following ways:
 ;
 ;       1. Command line switch:
-;               C:\MPASM MYFILE.ASM /PIC18F26K80
+;               C:\MPASM MYFILE.ASM /PIC18F25K80
 ;       2. LIST directive in the source file
-;               LIST   P=PIC18F26K80
+;               LIST   P=PIC18F25K80
 ;       3. Processor Type entry in the MPASM full-screen interface
 ;       4. Setting the processor in the MPLAB Project Dialog
 ;==========================================================================
@@ -29,7 +29,7 @@
 ;       Verify Processor
 ;
 ;==========================================================================
-        IFNDEF __18F26K80
+        IFNDEF __18F25K80
            MESSG "Processor-header file mismatch.  Verify selected processor."
         ENDIF
 
@@ -5074,19 +5074,19 @@ STKOVF           EQU  H'0007'
 ;     BBSIZ = BB1K         1K word Boot Block size
 ;     BBSIZ = BB2K         2K word Boot Block size
 ;
-;   Code Protect 00800-03FFF:
+;   Code Protect 00800-01FFF:
 ;     CP0 = ON             Enabled
 ;     CP0 = OFF            Disabled
 ;
-;   Code Protect 04000-07FFF:
+;   Code Protect 02000-03FFF:
 ;     CP1 = ON             Enabled
 ;     CP1 = OFF            Disabled
 ;
-;   Code Protect 08000-0BFFF:
+;   Code Protect 04000-05FFF:
 ;     CP2 = ON             Enabled
 ;     CP2 = OFF            Disabled
 ;
-;   Code Protect 0C000-0FFFF:
+;   Code Protect 06000-07FFF:
 ;     CP3 = ON             Enabled
 ;     CP3 = OFF            Disabled
 ;
