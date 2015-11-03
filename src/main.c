@@ -7,7 +7,8 @@
 #include "stdint.h"				// Standard int types
 
 #define PPS				// We have a PPS input attached to PIN_B0 (INT_EXT0)
-#define OUTPUT_PPS
+//#define OUTPUT_PPS
+#define OUTPUT_FEEDBACK
 //#define OUTPUT_NMEA		// Output recieved GPZDA and GPGGA messages
 //#define OUTPUT_ALL_GPS	// Output EVERYTHING recieved on the GPS UART
 #define DISP0_SS PIN_B4	// SS pin for display 0
@@ -148,7 +149,9 @@ void main(void)
 				update_display0();
 				update_display1();
 			}
+			#IFDEF OUTPUT_FEEDBACK
 			if(pps_waiting) pps_feedback();
+			#ENDIF
 		}
 		if(t100ms0==1)
 		{

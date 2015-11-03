@@ -27,7 +27,7 @@ void pps_interrupt(void)
 {
 	wallclock_inc_second();
 	#IFDEF OUTPUT_PPS
-	fprintf(COM1,".");
+	fprintf(COM1,"|");
 	#ENDIF
 	pps_waiting=TRUE;
 }
