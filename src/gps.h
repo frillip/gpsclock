@@ -27,7 +27,9 @@ uint8_t satellite_count=0;
 void pps_interrupt(void)
 {
 	wallclock_inc_second();
-	//fprintf(COM1,".\r\n");
+	#IFDEF OUTPUT_PPS
+	fprintf(COM1,".");
+	#ENDIF
 }
 #ENDIF
 
@@ -123,7 +125,9 @@ void process_gpzda(void)
 	// Calculate checksum
 	uint8_t i=0;
 	gpzda_checksum=0x00;
-	fprintf(COM1,"%c",gpzda_buffer[i]);	
+	#IFDEF OUTPUT_NMEA
+	fprintf(COM1,"%c",gpzda_buffer[i]);
+	#ENDIF
 	while(i<gpzda_offset-4)
 	{
 		i++;
@@ -158,7 +162,9 @@ void process_gpgga(void)
 	// Calculate checksum
 	uint8_t i=0;
 	gpgga_checksum=0x00;
-		
+	#IFDEF OUTPUT_NMEA
+	fprintf(COM1,"%c",gpgga_buffer[i]);
+	#ENDIF
 	while(i<gpgga_offset-4)
 	{
 		i++;

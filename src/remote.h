@@ -12,7 +12,12 @@ boolean command_complete=FALSE;
 
 void remote_feedback(void)
 {
-	fprintf(COM1,"\r\n%04lu/%02u/%02u %02u:%02u:%02u\r\n%02x\r\n",time.year,time.month,time.day,time.hour,time.minute,time.second,display_brightness);
+	fprintf(COM1,"\r\n%04lu/%02u/%02u %02u:%02u:%02u\r\n",time.year,time.month,time.day,time.hour,time.minute,time.second);
+}
+
+void brightness_feedback(void)
+{
+	fprintf(COM1,"%02X\r\n",display_brightness);
 }
 
 uint8_t strcmp(unsigned char *s1, unsigned char *s2)
@@ -140,7 +145,7 @@ else if(strncmp(command_buffer,"BRIGHT",6))
 	{
 		display_brightness=(((uint8_t)command_buffer[6]-48)*100)+(((uint8_t)command_buffer[7]-48)*10)+((uint8_t)command_buffer[8]-48);
 		update_brightness();
-		remote_feedback();
+		brightness_feedback();
 		command_complete=TRUE;
 	}
 	if(command_complete) fprintf(COM1,"OK\r\n");
