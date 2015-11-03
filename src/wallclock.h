@@ -93,7 +93,7 @@ void wallclock_inc_sec_100(void)
 	{
 		time.second_100=0;
 		#IFNDEF PPS
-		wallclock_inc_second();
+		if((gps_fix==0)||(satellite_count<4))wallclock_inc_second();
 		#ENDIF
 	}
 }

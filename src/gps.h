@@ -1,7 +1,7 @@
-char gps_buffer[64];
+char gps_buffer[128];
 uint8_t gps_offset=0;
 
-char gpzda_buffer[64];
+char gpzda_buffer[128];
 uint8_t gpzda_offset=0;
 uint8_t gpzda_bytes=0;
 uint8_t gpzda_checksum=0;
@@ -18,9 +18,6 @@ uint8_t gpgga_recieved_checksum=0;
 boolean gpgga_incoming=FALSE;
 boolean gpgga_waiting=FALSE;
 boolean gpgga_checksum_error=0;
-
-uint8_t gps_fix=0;
-uint8_t satellite_count=0;
 
 #IFDEF PPS
 #INT_EXT
@@ -143,7 +140,7 @@ void process_gpzda(void)
 	time.hour=(((uint8_t)gpzda_buffer[7]-48)*10)+((uint8_t)gpzda_buffer[8]-48);
 	time.minute=(((uint8_t)gpzda_buffer[9]-48)*10)+((uint8_t)gpzda_buffer[10]-48);
 	time.second=(((uint8_t)gpzda_buffer[11]-48)*10)+((uint8_t)gpzda_buffer[12]-48);
-	if(gps_fix==0) time.second_100=(((uint8_t)gpzda_buffer[14]-48)*10)+((uint8_t)gpzda_buffer[15]-48);
+	if((gps_fix==0)||(satellite_count<4)) time.second_100=(((uint8_t)gpzda_buffer[14]-48)*10)+((uint8_t)gpzda_buffer[15]-48);
 	time.day=(((uint8_t)gpzda_buffer[18]-48)*10)+((uint8_t)gpzda_buffer[19]-48);
 	time.month=(((uint8_t)gpzda_buffer[21]-48)*10)+((uint8_t)gpzda_buffer[22]-48);
 	time.year=(((uint16_t)gpzda_buffer[24]-48)*1000)+(((uint16_t)gpzda_buffer[25]-48)*100)+(((uint16_t)gpzda_buffer[26]-48)*10)+((uint16_t)gpzda_buffer[27]-48);	

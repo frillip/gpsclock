@@ -7,7 +7,7 @@
 #include "stdint.h"				// Standard int types
 
 #define PPS				// We have a PPS input attached to PIN_B0 (INT_EXT0)
-//#define OUTPUT_PPS
+#define OUTPUT_PPS
 //#define OUTPUT_NMEA		// Output recieved GPZDA and GPGGA messages
 //#define OUTPUT_ALL_GPS	// Output EVERYTHING recieved on the GPS UART
 #define DISP0_SS PIN_B4	// SS pin for display 0
@@ -33,7 +33,10 @@ typedef struct {
 } offset;
 
 time_struct time = {2015,6,30,0,0,0,0};
-//offset timezone = {0,0};
+offset timezone = {0,0};
+
+uint8_t gps_fix=0;
+uint8_t satellite_count=0;
 
 #include "display.h"
 #include "wallclock.h"
