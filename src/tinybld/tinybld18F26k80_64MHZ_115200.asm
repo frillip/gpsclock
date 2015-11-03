@@ -1,5 +1,5 @@
 	radix DEC
-	; LIST      P=18F25K80	; change also: Configure->SelectDevice from Mplab 
+	; LIST      P=18F26K80	; change also: Configure->SelectDevice from Mplab 
 xtal EQU 64000000		; you may want to change: _XT_OSC_1H  _HS_OSC_1H  _HSPLL_OSC_1H
 baud EQU 115200			; standard TinyBld baud rates: 115200 or 19200
 	; The above 3 lines can be changed and buid a bootloader for the desired frequency (and PIC type)

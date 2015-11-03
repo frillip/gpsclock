@@ -7,8 +7,14 @@
 #include "stdint.h"				// Standard int types
 
 #define PPS				// We have a PPS input attached to PIN_B0 (INT_EXT0)
+//#define OUTPUT_NMEA		// Output recieved GPZDA and GPGGA messages
+//#define OUTPUT_ALL_GPS	// Output EVERYTHING recieved on the GPS UART
 #define DISP0_SS PIN_B4	// SS pin for display 0
 #define DISP1_SS PIN_B5	// SS pin for display 1
+
+// Compile date and time
+char timestr[9]=__TIME__;
+char datestr[10]=__DATE__;
 
 typedef struct {
 	uint16_t year;
@@ -33,9 +39,6 @@ time_struct time = {2015,6,30,0,0,0,0};
 #include "scheduler.h"
 #include "remote.h"
 #include "gps.h"
-
-char timestr[9]=__TIME__;
-char datestr[9]=__DATE__;
 
 void main(void)
 {

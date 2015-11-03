@@ -41,13 +41,14 @@ void check_fix(void)
 void gps_message(void)
 {
 	gps_buffer[gps_offset]=fgetc(COM2);
-	//fprintf(COM1,"%c",gps_buffer[gps_offset]);
+	#IFDEF OUTPUT_ALL_GPS
+	fprintf(COM1,"%c",gps_buffer[gps_offset]);
+	#ENDIF
 	if(gpzda_incoming)
 	{
 		gpzda_buffer[gpzda_offset]=gps_buffer[gps_offset];
 		if(gpzda_buffer[gpzda_offset]==0x0d)
 		{
-			//fprintf(COM1,"$");
 			gpzda_incoming=FALSE;
 			gpzda_waiting=TRUE;
 			gps_offset=0;
@@ -64,7 +65,6 @@ void gps_message(void)
 		gpgga_buffer[gpgga_offset]=gps_buffer[gps_offset];
 		if(gpgga_buffer[gpgga_offset]==0x0d)
 		{
-			//fprintf(COM1,"$");
 			gpgga_incoming=FALSE;
 			gpgga_waiting=TRUE;
 			gps_offset=0;
@@ -126,12 +126,15 @@ void process_gpzda(void)
 	fprintf(COM1,"%c",gpzda_buffer[i]);	
 	while(i<gpzda_offset-4)
 	{
-		i++; 
+		i++;
+		#IFDEF OUTPUT_NMEA
 		fprintf(COM1,"%c",gpzda_buffer[i]); 
+		#ENDIF
 		gpzda_checksum^=gpzda_buffer[i];
 	}
-
+	#IFDEF OUTPUT_NMEA
 	fprintf(COM1,"*%X\r\n",gpzda_checksum);
+	#ENDIF
 
 	time.hour=(((uint8_t)gpzda_buffer[7]-48)*10)+((uint8_t)gpzda_buffer[8]-48);
 	time.minute=(((uint8_t)gpzda_buffer[9]-48)*10)+((uint8_t)gpzda_buffer[10]-48);
@@ -140,6 +143,10 @@ void process_gpzda(void)
 	time.day=(((uint8_t)gpzda_buffer[18]-48)*10)+((uint8_t)gpzda_buffer[19]-48);
 	time.month=(((uint8_t)gpzda_buffer[21]-48)*10)+((uint8_t)gpzda_buffer[22]-48);
 	time.year=(((uint16_t)gpzda_buffer[24]-48)*1000)+(((uint16_t)gpzda_buffer[25]-48)*100)+(((uint16_t)gpzda_buffer[26]-48)*10)+((uint16_t)gpzda_buffer[27]-48);	
+
+	#IFNDEF OUTPUT_NMEA
+	remote_feedback();
+	#ENDIF
 
 	gpzda_offset=0;
 	memset(gpzda_buffer, 0, sizeof(gpzda_buffer));
@@ -155,11 +162,14 @@ void process_gpgga(void)
 	while(i<gpgga_offset-4)
 	{
 		i++;
-		//fprintf(COM1,"%c",gpgga_buffer[i]); 
+		#IFDEF OUTPUT_NMEA
+		fprintf(COM1,"%c",gpgga_buffer[i]);
+		#ENDIF
 		gpgga_checksum^=gpgga_buffer[i];
 	}
-
-	//fprintf(COM1,"*%X\r\n",gpgga_checksum);
+	#IFDEF OUTPUT_NMEA
+	fprintf(COM1,"*%X\r\n",gpgga_checksum);
+	#ENDIF
 
 	i=0;
 	uint8_t gpgga_field=0;
