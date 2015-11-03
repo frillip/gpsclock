@@ -148,6 +148,7 @@ void main(void)
 				update_display0();
 				update_display1();
 			}
+			if(pps_waiting) pps_feedback();
 		}
 		if(t100ms0==1)
 		{

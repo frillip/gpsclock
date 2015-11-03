@@ -19,6 +19,8 @@ boolean gpgga_incoming=FALSE;
 boolean gpgga_waiting=FALSE;
 boolean gpgga_checksum_error=0;
 
+boolean pps_waiting=FALSE;
+
 #IFDEF PPS
 #INT_EXT
 void pps_interrupt(void)
@@ -27,8 +29,26 @@ void pps_interrupt(void)
 	#IFDEF OUTPUT_PPS
 	fprintf(COM1,".");
 	#ENDIF
+	pps_waiting=TRUE;
 }
 #ENDIF
+
+void pps_feedback(void)
+{
+	remote_feedback();
+	if(gps_fix==0)
+	{
+		fprintf(COM1,"NO FIX!\r\n");
+	}
+	else
+	{
+		if(gps_fix==1) fprintf(COM1,"GPS FIX");
+		else if(gps_fix==2) fprintf(COM1,"DGPS FIX");
+		if(satellite_count<80) fprintf(COM1," WTIH %u SATELLITES\r\n",satellite_count);
+		else fprintf(COM1,"\r\n");
+	}
+	pps_waiting=FALSE;
+}
 
 #INT_EXT1
 void check_fix(void)
@@ -145,10 +165,6 @@ void process_gpzda(void)
 	time.month=(((uint8_t)gpzda_buffer[21]-48)*10)+((uint8_t)gpzda_buffer[22]-48);
 	time.year=(((uint16_t)gpzda_buffer[24]-48)*1000)+(((uint16_t)gpzda_buffer[25]-48)*100)+(((uint16_t)gpzda_buffer[26]-48)*10)+((uint16_t)gpzda_buffer[27]-48);	
 
-	#IFNDEF OUTPUT_NMEA
-	remote_feedback();
-	#ENDIF
-
 	gpzda_offset=0;
 	memset(gpzda_buffer, 0, sizeof(gpzda_buffer));
 }
@@ -182,7 +198,9 @@ void process_gpgga(void)
 		i++;
 		if(gpgga_field==6) break;
 	}
+
 	gps_fix=((uint8_t)gpgga_buffer[i]-48);
+
 	if(gps_fix==0)
 	{
 		fprintf(COM1,"NO FIX!\r\n");
@@ -190,17 +208,13 @@ void process_gpgga(void)
 	}
 	else
 	{
-		if(gps_fix==1) fprintf(COM1,"GPS FIX");
-		else if(gps_fix==2) fprintf(COM1,"DGPS FIX");
 		if(((uint8_t)gpgga_buffer[i+2]-48)<10)
 		{
 			satellite_count=(((uint8_t)gpgga_buffer[i+2]-48)*10)+((uint8_t)gpgga_buffer[i+3]-48);
-			fprintf(COM1," WTIH %u SATELLITES\r\n",satellite_count);
 		}
 		else
 		{
 			satellite_count=0xFF;
-			fprintf(COM1,"\r\n");
 		}
 	}
 
