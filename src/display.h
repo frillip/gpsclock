@@ -6,7 +6,7 @@ void toggle_colon(void);
 #define DISP_BRIGHTEST 0xFF
 
 boolean colon_state=FALSE;
-boolean display_mode=0;
+boolean display_mode=1;
 uint8_t display_toggle=0;
 uint8_t display_brightness=DISP_BRIGHTEST;
 

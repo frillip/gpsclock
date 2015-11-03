@@ -64,7 +64,7 @@ void remote_command(void)
 			memset(command, 0, sizeof(command_buffer));
 			memset(command, 0, sizeof(command));
 			command_offset=0;
-			fprintf(COM1, "!\r\n");
+			//fprintf(COM1, "!\r\n");
 		}
 	}
 	else

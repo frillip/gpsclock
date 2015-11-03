@@ -132,23 +132,28 @@ void main(void)
 	while(TRUE)
 	{
 		restart_wdt();
-		if(t10ms0>=1)
+		if(t10ms0==1)
 		{
 			t10ms0=0;
 			wallclock_inc_sec_100();
+			if(display_mode==0)
+			{
+				update_display0();
+				update_display1();
+			}
 		}
-		if(t100ms0>=1)
+		if(t100ms0==1)
 		{
+			t100ms0=0;
 			if(command_waiting) process_command();
 			if(gpzda_waiting) process_gpzda();
-			t100ms0=0;
-		}
-		if(t100ms1>=5)
-		{
-			t100ms1=0;
 			if(gpgga_waiting) process_gpgga();
 		}
-		if(t1s0>=1)
+		if(t100ms1==5)
+		{
+			t100ms1=0;
+		}
+		if(t1s0==1)
 		{
 			t1s0=0;
 			#IFNDEF PPS

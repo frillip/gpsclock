@@ -14,7 +14,6 @@ static uint8_t month_days[13]={0,31,28,31,30,31,30,31,31,30,31,30,31};
 void wallclock_inc_year()
 {
 	time.year++;
-	if(display_mode==1) update_display0();
 }
 
 void wallclock_inc_month()
@@ -54,7 +53,6 @@ void wallclock_inc_day(void)
 		wallclock_inc_month();
 		return;
 	}
-	if(display_mode==1) update_display1();
 }
 
 void wallclock_inc_hour(void)
@@ -75,7 +73,6 @@ void wallclock_inc_minute(void)
 		time.minute=0;
 		wallclock_inc_hour();
 	}
-	if(display_mode==0) update_display0();
 }
 
 void wallclock_inc_second(void)
@@ -87,7 +84,6 @@ void wallclock_inc_second(void)
 		time.second=0;
 		wallclock_inc_minute();
 	}
-	if(display_mode==0) update_display1();
 }
 
 void wallclock_inc_sec_100(void)
@@ -100,7 +96,6 @@ void wallclock_inc_sec_100(void)
 		wallclock_inc_second();
 		#ENDIF
 	}
-	if(display_mode==0) update_display1();
 }
 
 void calc_diff(time_struct target, time_struct current, time_struct result) {

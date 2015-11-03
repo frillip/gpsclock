@@ -27,7 +27,7 @@ uint8_t satellite_count=0;
 void pps_interrupt(void)
 {
 	wallclock_inc_second();
-	fprintf(COM1,".\r\n");
+	//fprintf(COM1,".\r\n");
 }
 #ENDIF
 
@@ -47,7 +47,7 @@ void gps_message(void)
 		gpzda_buffer[gpzda_offset]=gps_buffer[gps_offset];
 		if(gpzda_buffer[gpzda_offset]==0x0d)
 		{
-			fprintf(COM1,"$");
+			//fprintf(COM1,"$");
 			gpzda_incoming=FALSE;
 			gpzda_waiting=TRUE;
 			gps_offset=0;
@@ -123,7 +123,7 @@ void process_gpzda(void)
 	// Calculate checksum
 	uint8_t i=0;
 	gpzda_checksum=0x00;
-		
+	fprintf(COM1,"%c",gpzda_buffer[i]);	
 	while(i<gpzda_offset-4)
 	{
 		i++; 
