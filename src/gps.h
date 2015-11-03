@@ -1,78 +1,119 @@
+char gps_buffer[64];
+uint8_t gps_offset=0;
+
+char gpzda_buffer[64];
 uint8_t gpzda_offset=0;
 uint8_t gpzda_bytes=0;
 uint8_t gpzda_checksum=0;
 uint8_t gpzda_recieved_checksum=0;
-char gpzda[32];
-char gpzda_buffer[26];
-boolean checksum_error=0;
 boolean gpzda_incoming=FALSE;
 boolean gpzda_waiting=FALSE;
-boolean gps_fix=0;
+boolean gpzda_checksum_error=0;
+
+char gpgga_buffer[64];
+uint8_t gpgga_offset=0;
+uint8_t gpgga_bytes=0;
+uint8_t gpgga_checksum=0;
+uint8_t gpgga_recieved_checksum=0;
+boolean gpgga_incoming=FALSE;
+boolean gpgga_waiting=FALSE;
+boolean gpgga_checksum_error=0;
+
+uint8_t gps_fix=0;
+uint8_t satellite_count=0;
 
 #IFDEF PPS
 #INT_EXT
 void pps_interrupt(void)
 {
 	wallclock_inc_second();
+	fprintf(COM1,".\r\n");
 }
 #ENDIF
 
 #INT_EXT1
 void check_fix(void)
 {
-	gps_fix=input(PIN_B1);
+	//gps_fix=input(PIN_B1);
 }
 
 #INT_RDA2
-void gpzda_message(void)
+void gps_message(void)
 {
-	gpzda[gpzda_offset]=fgetc(COM1);
+	gps_buffer[gps_offset]=fgetc(COM2);
+	//fprintf(COM1,"%c",gps_buffer[gps_offset]);
 	if(gpzda_incoming)
 	{
-		gpzda_buffer[gpzda_offset]=gpzda[gpzda_offset];
-		if(gpzda[gpzda_offset-2]=='*')
+		gpzda_buffer[gpzda_offset]=gps_buffer[gps_offset];
+		if(gpzda_buffer[gpzda_offset]==0x0d)
 		{
-			gpzda_bytes=gpzda_offset+1;
-			memset(command, 0, sizeof(gpzda));
-			gpzda_offset=0;
+			fprintf(COM1,"$");
 			gpzda_incoming=FALSE;
 			gpzda_waiting=TRUE;
+			gps_offset=0;
+			memset(gps_buffer, 0, sizeof(gps_buffer));
+		}
+		else
+		{
+			gps_offset++;
+			gpzda_offset++;
+		}
+	}
+	else if(gpgga_incoming)
+	{
+		gpgga_buffer[gpgga_offset]=gps_buffer[gps_offset];
+		if(gpgga_buffer[gpgga_offset]==0x0d)
+		{
+			//fprintf(COM1,"$");
+			gpgga_incoming=FALSE;
+			gpgga_waiting=TRUE;
+			gps_offset=0;
+			memset(gps_buffer, 0, sizeof(gps_buffer));
+		}
+		else
+		{
+			gps_offset++;
+			gpgga_offset++;
 		}
 	}
 	else
 	{
-		if((gpzda_offset==0)&&(gpzda[gpzda_offset]=='$'))
+		if((gps_offset==0)&&(gps_buffer[gps_offset]=='$')) gps_offset++;
+		else if((gps_offset==1)&&(gps_buffer[gps_offset]=='G')) gps_offset++;
+		else if((gps_offset==2)&&(gps_buffer[gps_offset]=='P')) gps_offset++;
+		else if((gps_offset==3)&&((gps_buffer[gps_offset]=='Z')||(gps_buffer[gps_offset]=='G'))) gps_offset++;
+		else if((gps_offset==4)&&((gps_buffer[gps_offset]=='D')||(gps_buffer[gps_offset]=='G'))) gps_offset++;
+		else if((gps_offset==5)&&(gps_buffer[gps_offset]=='A'))
 		{
-			gpzda_offset++;
+			gps_offset++;
+			if(gps_buffer[gps_offset-3]=='Z')
+			{
+				gpzda_incoming=TRUE;
+				gpzda_offset=gps_offset;
+				uint8_t i=0;
+				while(i<gpzda_offset)
+				{
+					gpzda_buffer[i]=gps_buffer[i];
+ 					i++;
+				}
+			}
+			else if(gps_buffer[gps_offset-3]=='G')
+			{
+				gpgga_incoming=TRUE;
+				gpgga_offset=gps_offset;
+				uint8_t i=0;
+				while(i<gpgga_offset)
+				{
+					gpgga_buffer[i]=gps_buffer[i];
+ 					i++;
+				}
+			}
 		}
-		else if((gpzda_offset==1)&&(gpzda[gpzda_offset]=='G'))
+		else
 		{
-			gpzda_buffer[gpzda_offset-1]=gpzda[gpzda_offset];
-			gpzda_offset++;
+			gps_offset=0;
+			memset(gps_buffer, 0, sizeof(gps_buffer));
 		}
-		else if((gpzda_offset==2)&&(gpzda[gpzda_offset]=='P'))
-		{
-			gpzda_buffer[gpzda_offset-1]=gpzda[gpzda_offset];
-			gpzda_offset++;
-		}
-		else if((gpzda_offset==3)&&(gpzda[gpzda_offset]=='Z'))
-		{
-			gpzda_buffer[gpzda_offset-1]=gpzda[gpzda_offset];
-			gpzda_offset++;
-		}
-		else if((gpzda_offset==4)&&(gpzda[gpzda_offset]=='D'))
-		{
-			gpzda_buffer[gpzda_offset-1]=gpzda[gpzda_offset];
-			gpzda_offset++;
-		}
-		else if ((gpzda_offset==5)&&(gpzda[gpzda_offset]=='A'))
-		{
-			gpzda_buffer[gpzda_offset-1]=gpzda[gpzda_offset];
-			gpzda_offset++;
-			gpzda_incoming=TRUE;
-			gpzda_waiting=FALSE;
-		}
-		else gpzda_offset=0;
 	}
 }
 
@@ -80,31 +121,76 @@ void process_gpzda(void)
 {
 	gpzda_waiting=FALSE;
 	// Calculate checksum
-	uint8_t i;
+	uint8_t i=0;
 	gpzda_checksum=0x00;
-	for(i=0;i>gpzda_bytes-1;i++)
+		
+	while(i<gpzda_offset-4)
 	{
+		i++; 
+		fprintf(COM1,"%c",gpzda_buffer[i]); 
 		gpzda_checksum^=gpzda_buffer[i];
 	}
-	// Convert recieved checksum from char[2] to uint8_t
-	gpzda_recieved_checksum=0;
-	// Most significant nibble
-	if((uint8_t)gpzda_buffer[gpzda_bytes-2]>64) gpzda_checksum=((uint8_t)gpzda_buffer[gpzda_bytes-2]-55)<<4;
-	else gpzda_recieved_checksum=((uint8_t)gpzda_buffer[gpzda_bytes-2]-48)<<4;
-	// Least significant nibble
-	if((uint8_t)gpzda_buffer[gpzda_bytes-1]>64) gpzda_checksum+=((uint8_t)gpzda_buffer[gpzda_bytes-1]-55);
-	else gpzda_recieved_checksum+=((uint8_t)gpzda_buffer[gpzda_bytes-1]-48);
-	// Check it
-	if(gpzda_checksum!=gpzda_recieved_checksum) checksum_error=1;	// Checksum bad! :(
-	else	// Checksum good!
-	{
-		checksum_error=0;
-		time.hour=(((uint8_t)gpzda_buffer[6]-48)*10)+((uint8_t)gpzda_buffer[7]-48);
-		time.minute=(((uint8_t)gpzda_buffer[8]-48)*10)+((uint8_t)gpzda_buffer[9]-48);
-		time.second=(((uint8_t)gpzda_buffer[10]-48)*10)+((uint8_t)gpzda_buffer[11]-48);
-		time.day=(((uint8_t)gpzda_buffer[17]-48)*10)+((uint8_t)gpzda_buffer[18]-48);
-		time.month=(((uint8_t)gpzda_buffer[20]-48)*10)+((uint8_t)gpzda_buffer[21]-48);
-		time.year=(((uint16_t)gpzda_buffer[23]-48)*1000)+(((uint16_t)gpzda_buffer[24]-48)*100)+(((uint16_t)gpzda_buffer[25]-48)*10)+((uint16_t)gpzda_buffer[26]-48);
-	}
+
+	fprintf(COM1,"*%X\r\n",gpzda_checksum);
+
+	time.hour=(((uint8_t)gpzda_buffer[7]-48)*10)+((uint8_t)gpzda_buffer[8]-48);
+	time.minute=(((uint8_t)gpzda_buffer[9]-48)*10)+((uint8_t)gpzda_buffer[10]-48);
+	time.second=(((uint8_t)gpzda_buffer[11]-48)*10)+((uint8_t)gpzda_buffer[12]-48);
+	if(gps_fix==0) time.second_100=(((uint8_t)gpzda_buffer[14]-48)*10)+((uint8_t)gpzda_buffer[15]-48);
+	time.day=(((uint8_t)gpzda_buffer[18]-48)*10)+((uint8_t)gpzda_buffer[19]-48);
+	time.month=(((uint8_t)gpzda_buffer[21]-48)*10)+((uint8_t)gpzda_buffer[22]-48);
+	time.year=(((uint16_t)gpzda_buffer[24]-48)*1000)+(((uint16_t)gpzda_buffer[25]-48)*100)+(((uint16_t)gpzda_buffer[26]-48)*10)+((uint16_t)gpzda_buffer[27]-48);	
+
+	gpzda_offset=0;
 	memset(gpzda_buffer, 0, sizeof(gpzda_buffer));
+}
+
+void process_gpgga(void)
+{
+	gpgga_waiting=FALSE;
+	// Calculate checksum
+	uint8_t i=0;
+	gpgga_checksum=0x00;
+		
+	while(i<gpgga_offset-4)
+	{
+		i++;
+		//fprintf(COM1,"%c",gpgga_buffer[i]); 
+		gpgga_checksum^=gpgga_buffer[i];
+	}
+
+	//fprintf(COM1,"*%X\r\n",gpgga_checksum);
+
+	i=0;
+	uint8_t gpgga_field=0;
+	while(i<gpgga_offset-4)
+	{
+		if(gpgga_buffer[i]==',') gpgga_field++;
+		i++;
+		if(gpgga_field==6) break;
+	}
+	gps_fix=((uint8_t)gpgga_buffer[i]-48);
+	if(gps_fix==0)
+	{
+		fprintf(COM1,"NO FIX!\r\n");
+		satellite_count=0;
+	}
+	else
+	{
+		if(gps_fix==1) fprintf(COM1,"GPS FIX");
+		else if(gps_fix==2) fprintf(COM1,"DGPS FIX");
+		if(((uint8_t)gpgga_buffer[i+2]-48)<10)
+		{
+			satellite_count=(((uint8_t)gpgga_buffer[i+2]-48)*10)+((uint8_t)gpgga_buffer[i+3]-48);
+			fprintf(COM1," WTIH %u SATELLITES\r\n",satellite_count);
+		}
+		else
+		{
+			satellite_count=0xFF;
+			fprintf(COM1,"\r\n");
+		}
+	}
+
+	gpgga_offset=0;
+	memset(gpgga_buffer, 0, sizeof(gpgga_buffer));
 }

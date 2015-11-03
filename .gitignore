@@ -16,3 +16,4 @@ current_time.h
 *.exe
 src/tinybld/tinybld.ini
 *.bat
+*.ccspjt

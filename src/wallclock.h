@@ -82,17 +82,26 @@ void wallclock_inc_second(void)
 {
 	time.second++;
 	time.second_100=0;
+	#IFNDEF PPS
 	if(time.second>=60)
 	{
 		time.second=0;
 		wallclock_inc_minute();
 	}
+	#ENDIF
 	if(display_mode==0) update_display1();
 }
 
 void wallclock_inc_sec_100(void)
 {
 	time.second_100++;
+	if(time.second_100>=100)
+	{
+		time.second_100=0;
+		#IFNDEF PPS
+		wallclock_inc_second();
+		#ENDIF
+	}
 	if(display_mode==0) update_display1();
 }
 

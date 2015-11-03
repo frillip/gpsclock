@@ -7,6 +7,8 @@ void toggle_colon(void);
 
 boolean colon_state=FALSE;
 boolean display_mode=0;
+uint8_t display_toggle=0;
+uint8_t display_brightness=DISP_BRIGHTEST;
 
 void update_display0(void)
 {
@@ -77,22 +79,6 @@ void init_display(void)
 
 	// Reset display0, turn on colon
 	output_low(DISP0_SS);
-	#asm nop #endasm
-	spi_write(0x82);
-	spi_write(0x00);
-	// reset
-	spi_write(0x76);
-	// dots
-	spi_write(0x77);
-	// colon
-	spi_write(0x02);
-	// max brightness
-	spi_write(0x7A);
-	spi_write(DISP_BRIGHTEST);
-	#asm nop #endasm
-	output_high(DISP0_SS);
-
-	// Reset display1, turn on colon
 	output_low(DISP1_SS);
 	#asm nop #endasm
 	spi_write(0x82);
@@ -107,6 +93,7 @@ void init_display(void)
 	spi_write(0x7A);
 	spi_write(DISP_BRIGHTEST);
 	#asm nop #endasm
+	output_high(DISP0_SS);
 	output_high(DISP1_SS);
 
 	// fill with initial time (force)
@@ -154,5 +141,40 @@ void toggle_colon(void)
 		#asm nop #endasm
 		output_high(DISP1_SS);
 	}
+	if(display_mode==1)
+	{
+		// Display0
+		output_low(DISP0_SS);
+		#asm nop #endasm
+		// Dots
+		spi_write(0x77);
+		// Colon or no colon
+		spi_write(0x08);
+		// Deselect display
+		#asm nop #endasm
+		output_high(DISP0_SS);
+	
+		// Display1
+		output_low(DISP1_SS);
+		#asm nop #endasm
+		// Dots
+		spi_write(0x77);
+		// Colon or no colon
+		spi_write(0x02);
+		// Deselect display
+		#asm nop #endasm
+		output_high(DISP1_SS);
+	}
 }
 
+void update_brightness(void)
+{
+	output_low(DISP0_SS);
+	output_low(DISP1_SS);
+	#asm nop #endasm
+	spi_write(0x7A);
+	spi_write(display_brightness);
+	#asm nop #endasm
+	output_high(DISP0_SS);
+	output_high(DISP1_SS);
+}

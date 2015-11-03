@@ -35,3 +35,15 @@ void scheduler(void)
 		}
 	}
 }
+
+void reset_scheduler(void)
+{
+	t10ms=0;
+	t10ms0=0;
+	t100ms=0;
+	t100ms0=0;
+	t100ms1=0;
+	t1s0=0;
+	t1s1=0;
+	set_timer3(-20000);
+}

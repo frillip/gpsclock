@@ -1,4 +1,4 @@
-#include "18F25K80.h"
+#include "18F26K80.h"
 #device PASS_STRINGS = IN_RAM
 #fuses NOPROTECT,HSH,PLLEN,WDT,WDT128 //,SOSC_LOW
 #use delay(clock=64000000,crystal=16000000)
@@ -6,7 +6,7 @@
 #use rs232(baud=115200,parity=N,xmit=PIN_B6,rcv=PIN_B7,bits=8,ERRORS,stream=COM2,restart_wdt)	// TTL serial for GPS
 #include "stdint.h"				// Standard int types
 
-//#define PPS				// We have a PPS input attached to PIN_B0 (INT_EXT0)
+#define PPS				// We have a PPS input attached to PIN_B0 (INT_EXT0)
 #define DISP0_SS PIN_B4	// SS pin for display 0
 #define DISP1_SS PIN_B5	// SS pin for display 1
 
@@ -35,6 +35,7 @@ time_struct time = {2015,6,30,0,0,0,0};
 #include "gps.h"
 
 char timestr[9]=__TIME__;
+char datestr[9]=__DATE__;
 
 void main(void)
 {
@@ -46,9 +47,9 @@ void main(void)
 #IFDEF PPS
 	enable_interrupts(INT_EXT_L2H);				// PPS interrupt
 #ENDIF
-	enable_interrupts(INT_EXT1);				// GPS fix interrupt
+//	enable_interrupts(INT_EXT1);				// GPS fix interrupt
 	enable_interrupts(INT_RDA);					// Enable AT command serial interrupt
-//	enable_interrupts(INT_RDA2);				// Enable GPS serial interrupt
+	enable_interrupts(INT_RDA2);				// Enable GPS serial interrupt
 	enable_interrupts(INT_TIMER1);				// Enable timekeeping timer interrupt
 	enable_interrupts(INT_TIMER3);				// Enable scheduler timer interrupt
 	enable_interrupts(GLOBAL);					// Enable interrupts globally
@@ -68,22 +69,65 @@ void main(void)
 		time.second=(((uint8_t)timestr[6]-48)*10)+((uint8_t)timestr[7]-46);
 		time.minute=(((uint8_t)timestr[3]-48)*10)+((uint8_t)timestr[4]-48);
 		time.hour=(((uint8_t)timestr[0]-48)*10)+((uint8_t)timestr[1]-48);		// Parse timestr to time struct
+
+		time.day=(((uint8_t)datestr[0]-48)*10)+((uint8_t)datestr[1]-48);
+
+		switch (datestr[3])
+		{
+			case 'J' :
+				if(datestr[4]=='A') time.month=1;
+				else if(datestr[5]=='N')time.month=6;
+				else time.month=7;
+				break;
+			case 'F' :
+				time.month=2;
+				break;
+			case 'M' :
+				if(datestr[5]=='R') time.month=3;
+				else time.month=5;
+				break;
+			case 'A' :
+				if(datestr[4]=='P') time.month=4;
+				else time.month=8;
+				break;
+			case 'S' :
+				time.month=9;
+				break;
+			case 'O' :
+				time.month=10;
+				break;
+			case 'N' :
+				time.month=11;
+				break;
+			case 'D' :
+				time.month=12;
+				break;
+			default  :
+				time.month=10;
+				break;
+		}
+		time.year=2000+(((uint8_t)datestr[7]-48)*10)+((uint8_t)datestr[8]-48);
 	}
 	memset(command_buffer, 0, sizeof(command_buffer));
 	memset(command, 0, sizeof(command));
+	delay_ms(500);
+	fprintf(COM2,"$PMTK251,115200*1F\r\n");
+	fprintf(COM2,"$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0*28\r\n");
 	
-//	delay_ms(500);	
+	delay_ms(50);
+
+	//#use rs232(baud=115200,parity=N,xmit=PIN_B6,rcv=PIN_B7,bits=8,ERRORS,stream=COM2,restart_wdt)	// TTL serial for GPS
+
+	delay_ms(50);
 
 	restart_wdt();
 	init_display();
 
 	fprintf(COM1, "HELLO!\r\n");	// Say hello!
 
-	t10ms=0;
-	t100ms=0;
-	t100ms0=0;
-	t1s0=0;
-	set_timer3(-20000);			// Reset and set scheduler
+
+
+	reset_scheduler();			// Reset and set scheduler
 //	set_timer1(-32768);			// Begin timekeeping
 	while(TRUE)
 	{
@@ -96,40 +140,40 @@ void main(void)
 		if(t100ms0>=1)
 		{
 			if(command_waiting) process_command();
-			if((gps_fix)&&(gpzda_waiting)) process_gpzda();
+			if(gpzda_waiting) process_gpzda();
 			t100ms0=0;
 		}
 		if(t100ms1>=5)
 		{
 			t100ms1=0;
+			if(gpgga_waiting) process_gpgga();
 		}
 		if(t1s0>=1)
 		{
 			t1s0=0;
+			#IFNDEF PPS
 			wallclock_inc_second();
+			#ENDIF
 			toggle_colon();
 			update_display0();
 			update_display1();
-		}
-		if(((t1s1>=15)&&(display_mode==0))||((t1s1>=5)&&(display_mode==1)))
-		{
-			t1s1=0;
-			display_mode=!display_mode;
-			output_low(DISP0_SS);
-			#asm nop #endasm
-			spi_write(0x76);
-			#asm nop #endasm
-			output_high(DISP0_SS);
-			delay_us(10);
-			update_display0();
-		
-			output_low(DISP1_SS);
-			#asm nop #endasm
-			spi_write(0x76);
-			#asm nop #endasm
-			output_high(DISP1_SS);
-			delay_us(10);
-			update_display1();
+			if(time.second%5==0) display_toggle++;
+			if(((display_toggle>=3)&&(display_mode==0))||((display_toggle>=1)&&(display_mode==1)))
+			{
+				display_toggle=0;
+				display_mode=!display_mode;
+				output_low(DISP0_SS);
+				output_low(DISP1_SS);
+				#asm nop #endasm
+				spi_write(0x76);
+				#asm nop #endasm
+				output_high(DISP0_SS);
+				output_high(DISP1_SS);
+				delay_us(10);
+				toggle_colon();
+				update_display0();
+				update_display1();
+			}
 		}
 	}
 }
