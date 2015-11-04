@@ -20,6 +20,7 @@ boolean gpgga_waiting=FALSE;
 boolean gpgga_checksum_error=0;
 
 boolean pps_waiting=FALSE;
+boolean pps_done=FALSE;
 
 #IFDEF PPS
 #INT_EXT
@@ -36,18 +37,14 @@ void pps_interrupt(void)
 void pps_feedback(void)
 {
 	remote_feedback();
-	if(gps_fix==0)
-	{
-		fprintf(COM1,"NO FIX!\r\n");
-	}
-	else
-	{
-		if(gps_fix==1) fprintf(COM1,"GPS FIX");
-		else if(gps_fix==2) fprintf(COM1,"DGPS FIX");
-		if(satellite_count<80) fprintf(COM1," WTIH %u SATELLITES\r\n",satellite_count);
-		else fprintf(COM1,"\r\n");
-	}
+	if(gps_fix==0) fprintf(COM1,"NO FIX");
+	else if(gps_fix==1) fprintf(COM1,"GPS FIX");
+	else if(gps_fix==2) fprintf(COM1,"DGPS FIX");
+	if(satellite_count==0xFF) fprintf(COM1,": NO SATELLITE COUNT!\r\n");
+	else fprintf(COM1,": %u SATELLITES\r\n",satellite_count);
+
 	pps_waiting=FALSE;
+	pps_done=TRUE;
 }
 
 #INT_EXT1
@@ -201,22 +198,15 @@ void process_gpgga(void)
 
 	gps_fix=((uint8_t)gpgga_buffer[i]-48);
 
-	if(gps_fix==0)
+	while(i<gpgga_offset-4)
 	{
-		fprintf(COM1,"NO FIX!\r\n");
-		satellite_count=0;
+		if(gpgga_buffer[i]==',') gpgga_field++;
+		i++;
+		if(gpgga_field==7) break;
 	}
-	else
-	{
-		if(((uint8_t)gpgga_buffer[i+2]-48)<10)
-		{
-			satellite_count=(((uint8_t)gpgga_buffer[i+2]-48)*10)+((uint8_t)gpgga_buffer[i+3]-48);
-		}
-		else
-		{
-			satellite_count=0xFF;
-		}
-	}
+
+	if(((uint8_t)gpgga_buffer[i]-48)>9) satellite_count=0xFF;
+	else satellite_count=(((uint8_t)gpgga_buffer[i]-48)*10)+((uint8_t)gpgga_buffer[i+1]-48);
 
 	gpgga_offset=0;
 	memset(gpgga_buffer, 0, sizeof(gpgga_buffer));

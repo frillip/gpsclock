@@ -52,9 +52,9 @@ void main(void)
 //	setup_timer_1(T1_EXTERNAL | T1_ENABLE_SOSC);	// Set up the timekeeping timer
 	setup_timer_2(T2_DIV_BY_1, 0x1F, 1);		// Our SPI 7 segment displays only operate up to 250kHz, so we have to set up the SPI clock using timer2
 	setup_timer_3(T3_INTERNAL | T3_DIV_BY_8);	// Set up scheduler timer
-#IFDEF PPS
+	#IFDEF PPS
 	enable_interrupts(INT_EXT_L2H);				// PPS interrupt
-#ENDIF
+	#ENDIF
 //	enable_interrupts(INT_EXT1);				// GPS fix interrupt
 	enable_interrupts(INT_RDA);					// Enable AT command serial interrupt
 	enable_interrupts(INT_RDA2);				// Enable GPS serial interrupt
@@ -173,6 +173,10 @@ void main(void)
 			toggle_colon();
 			update_display0();
 			update_display1();
+			#IFDEF OUTPUT_FEEDBACK
+			if(pps_done==FALSE) pps_feedback();
+			pps_done=FALSE;
+			#ENDIF
 			if(time.second%5==0) display_toggle++;
 			if(((display_toggle>=3)&&(display_mode==0))||((display_toggle>=1)&&(display_mode==1)))
 			{
