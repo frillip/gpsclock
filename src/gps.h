@@ -10,7 +10,7 @@ boolean gpzda_incoming=FALSE;
 boolean gpzda_waiting=FALSE;
 boolean gpzda_checksum_error=0;
 
-char gpgga_buffer[64];
+char gpgga_buffer[128];
 uint8_t gpgga_offset=0;
 uint8_t gpgga_bytes=0;
 uint8_t gpgga_checksum=0;
