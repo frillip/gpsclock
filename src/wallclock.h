@@ -15,45 +15,97 @@ boolean overdue_flag=FALSE;
 boolean inc_minute_flag=FALSE;
 static uint8_t month_days[13]={0,31,28,31,30,31,30,31,31,30,31,30,31};
 
+void calc_local_time(void)
+{
+	local.minute=utc.minute;
+	local.hour=utc.hour;
+	local.day=utc.day;
+	local.month=utc.month;
+	local.year=utc.year;
+	if(timezone.hour||timezone.minute)
+	{
+		if(timezone.minus_flag) local.minute=local.minute;		
+		else
+		{
+			local.minute=local.minute+timezone.minute;
+			if(local.minute>60)
+			{
+				local.minute=local.minute-60;
+				local.hour++;
+			}
+			local.hour=local.hour+timezone.hour;
+			if(local.hour>24)
+			{
+				local.hour=local.hour-24;
+				local.day++;
+			}
+			if((local.day>28)&&(local.month==2)&&((local.year%4!=0)||(local.year%10==0)))
+			{
+				local.day=1;
+				local.month++;
+			}
+			else if((local.day>29)&&(local.month==2)&&((local.year%4==0)&&(local.year%10!=0)))
+			{
+				local.day=1;
+				local.month++;
+			}
+			else if((local.day>30)&&((local.month==4)||(local.month==6)||(local.month==9)||(local.month==11)))
+			{
+				local.day=1;
+				local.month++;
+			}
+			else if(local.day>31)
+			{
+				local.day=1;
+				local.month++;
+			}
+			if(local.month>12)
+			{
+				local.year++;
+			}	
+		}
+	}
+}
+
 void wallclock_inc_year()
 {
-	time.year++;
+	utc.year++;
 }
 
 void wallclock_inc_month()
 {
-	time.month++;
-	if(time.month>12)
+	utc.month++;
+	if(utc.month>12)
 	{
-		time.month=1;
+		utc.month=1;
 		wallclock_inc_year();
 	}
 }
 
 void wallclock_inc_day(void)
 {
-	time.day++;
-	if(time.day>31)
+	utc.day++;
+	if(utc.day>31)
 	{
-		time.day=1;
+		utc.day=1;
 		wallclock_inc_month();
 		return;
 	}
-	if((time.day>30)&&((time.month==4)||(time.month==6)||(time.month==9)||(time.month==11)))
+	if((utc.day>30)&&((utc.month==4)||(utc.month==6)||(utc.month==9)||(utc.month==11)))
 	{
-		time.day=1;
+		utc.day=1;
 		wallclock_inc_month();
 		return;
 	}
-	if((time.day>29)&&(time.month==2)&&((time.year%4==0)&&(time.year%10!=0)))
+	if((utc.day>29)&&(utc.month==2)&&((utc.year%4==0)&&(utc.year%10!=0)))
 	{
-		time.day=1;
+		utc.day=1;
 		wallclock_inc_month();
 		return;
 	}
-	if((time.day>28)&&(time.month==2)&&((time.year%4!=0)||(time.year%10==0)))
+	if((utc.day>28)&&(utc.month==2)&&((utc.year%4!=0)||(utc.year%10==0)))
 	{
-		time.day=1;
+		utc.day=1;
 		wallclock_inc_month();
 		return;
 	}
@@ -61,43 +113,45 @@ void wallclock_inc_day(void)
 
 void wallclock_inc_hour(void)
 {
-	time.hour++;
-	if(time.hour>=24)
+	utc.hour++;
+	if(utc.hour>=24)
 	{
-		time.hour=0;
+		utc.hour=0;
 		wallclock_inc_day();
 	}
 }
 
 void wallclock_inc_minute(void)
 {
-	time.minute++;
-	if(time.minute>=60)
+	utc.minute++;
+	if(utc.minute>=60)
 	{
-		time.minute=0;
+		utc.minute=0;
 		wallclock_inc_hour();
 	}
+	calc_local_time();
 }
 
 void wallclock_inc_second(void)
 {
-	time.second++;
-	time.second_100=0;
-	if(time.second>=60)
+	utc.second++;
+	utc.second_100=0;
+	if(utc.second>=60)
 	{
-		time.second=0;
+		utc.second=0;
 		inc_minute_flag=TRUE;
 	}
 }
 
 void wallclock_inc_sec_100(void)
 {
-	time.second_100++;
-	if(time.second_100>=100)
+	utc.second_100++;
+	if(utc.second_100>=100)
 	{
-		time.second_100=0;
+		utc.second_100=0;
 	}
 }
+
 
 void calc_diff(time_struct target, time_struct current, time_struct result) {
      // Copy struct

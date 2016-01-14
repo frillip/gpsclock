@@ -1,6 +1,7 @@
 void remote_init(void);
 void remote_command(void);
-void remote_feedback(void);
+void utc_feedback(void);
+void local_feedback(void);
 
 uint8_t command_offset=0;
 char command[128];
@@ -10,9 +11,18 @@ boolean command_incoming=FALSE;
 boolean command_waiting=FALSE;
 boolean command_complete=FALSE;
 
-void remote_feedback(void)
+void utc_feedback(void)
 {
-	fprintf(COM1,"\r\n%04lu/%02u/%02u %02u:%02u:%02u\r\n",time.year,time.month,time.day,time.hour,time.minute,time.second);
+	fprintf(COM1,"\r\n%04lu-%02u-%02uT%02u:%02u:%02u",utc.year,utc.month,utc.day,utc.hour,utc.minute,utc.second);
+	if(timezone.minus_flag) fprintf(COM1,"-");
+	else fprintf(COM1,"+");
+	fprintf(COM1,"%02u:%02u",timezone.hour,timezone.minute);
+	local_feedback();
+}
+
+void local_feedback(void)
+{
+	fprintf(COM1,"\r\n%04lu-%02u-%02uT%02u:%02u:%02u\r\n",local.year,local.month,local.day,local.hour,local.minute,utc.second);
 }
 
 void brightness_feedback(void)
@@ -99,46 +109,49 @@ void process_command(void)
 	{
 		fprintf(COM1, "Resetting...\r\n");
 		write_eeprom(EEPROM_RESET,0x42);			// Write reset flag
-		write_eeprom(EEPROM_YEAR,(time.year>>8));
-		write_eeprom(EEPROM_YEAR+1,(time.year&0x00FF));
-		write_eeprom(EEPROM_MONTH,time.month);
-		write_eeprom(EEPROM_DAY,time.day);
-		write_eeprom(EEPROM_HOUR,time.hour);
-		write_eeprom(EEPROM_MINUTE,time.minute);
-		write_eeprom(EEPROM_SECOND,time.second);	// Write current time to EEPROM
+		write_eeprom(EEPROM_YEAR,(utc.year>>8));
+		write_eeprom(EEPROM_YEAR+1,(utc.year&0x00FF));
+		write_eeprom(EEPROM_MONTH,utc.month);
+		write_eeprom(EEPROM_DAY,utc.day);
+		write_eeprom(EEPROM_HOUR,utc.hour);
+		write_eeprom(EEPROM_MINUTE,utc.minute);
+		write_eeprom(EEPROM_SECOND,utc.second);	// Write current time to EEPROM
 		delay_ms(10);
 		reset_cpu();
 	}
-	else if(strncmp(command_buffer,"TIME",4))
+	else if((strncmp(command_buffer,"TIME",4))&&(command_buffer[4]<58))
 	{
+/*
 		if(command_buffer[9])
 		{
-			time.second=(((uint8_t)command_buffer[8]-48)*10)+((uint8_t)command_buffer[9]-48);
-			time.second_100=0;
+			utc.second=(((uint8_t)command_buffer[8]-48)*10)+((uint8_t)command_buffer[9]-48);
+			utc.second_100=0;
 			reset_scheduler();
 //			set_timer1(-32768);
 		}
 		if(command_buffer[7])
 		{
-			time.minute=(((uint8_t)command_buffer[6]-48)*10)+((uint8_t)command_buffer[7]-48);
-			time.hour=(((uint8_t)command_buffer[4]-48)*10)+((uint8_t)command_buffer[5]-48);
+			utc.minute=(((uint8_t)command_buffer[6]-48)*10)+((uint8_t)command_buffer[7]-48);
+			utc.hour=(((uint8_t)command_buffer[4]-48)*10)+((uint8_t)command_buffer[5]-48);
 			update_display0();
 			update_display1();
 		}
-		remote_feedback();
+*/
+		local_feedback();
 		command_complete=TRUE;
 	}
 else if(strncmp(command_buffer,"DATE",4))
 	{
-		if(command_buffer[11])
+/*		if(command_buffer[11])
 		{
-			time.day=(((uint8_t)command_buffer[10]-48)*10)+((uint8_t)command_buffer[11]-48);
-			time.month=(((uint8_t)command_buffer[8]-48)*10)+((uint8_t)command_buffer[9]-48);
-			time.year=(((uint16_t)command_buffer[4]-48)*1000)+(((uint16_t)command_buffer[5]-48)*100)+(((uint16_t)command_buffer[6]-48)*10)+((uint16_t)command_buffer[7]-48);
+			utc.day=(((uint8_t)command_buffer[10]-48)*10)+((uint8_t)command_buffer[11]-48);
+			utc.month=(((uint8_t)command_buffer[8]-48)*10)+((uint8_t)command_buffer[9]-48);
+			utc.year=(((uint16_t)command_buffer[4]-48)*1000)+(((uint16_t)command_buffer[5]-48)*100)+(((uint16_t)command_buffer[6]-48)*10)+((uint16_t)command_buffer[7]-48);
 			update_display0();
 			update_display1();
 		}
-		remote_feedback();
+*/
+		local_feedback();
 		command_complete=TRUE;
 	}
 else if(strncmp(command_buffer,"BRIGHT",6))
@@ -152,13 +165,19 @@ else if(strncmp(command_buffer,"BRIGHT",6))
 	}
 else if(strncmp(command_buffer,"TIMEZONE",8))
 	{
-		timezone.hour=(((uint8_t)command_buffer[8]-48)*10)+((uint8_t)command_buffer[9]-48);
-		if(timezone.hour>14)timezone.hour=0;
-		timezone.minute=(((uint8_t)command_buffer[10]-48)*10)+((uint8_t)command_buffer[11]-48);
-		if(timezone.minute>45)timezone.minute=0;
-		write_eeprom(EEPROM_TZ_HOUR,timezone.hour);
-		write_eeprom(EEPROM_TZ_MINUTE,timezone.minute);
-		remote_feedback();
+		if(command_buffer[12])
+		{
+			if(command_buffer[8]=='-')timezone.minus_flag=TRUE;
+			else timezone.minus_flag=FALSE;
+			timezone.hour=(((uint8_t)command_buffer[9]-48)*10)+((uint8_t)command_buffer[10]-48);
+			if(timezone.hour>14)timezone.hour=0;
+			timezone.minute=(((uint8_t)command_buffer[11]-48)*10)+((uint8_t)command_buffer[12]-48);
+			if(timezone.minute>45)timezone.minute=0;
+			write_eeprom(EEPROM_TZ_HOUR,timezone.hour);
+			write_eeprom(EEPROM_TZ_MINUTE,timezone.minute);
+		}
+		calc_local_time();
+		utc_feedback();
 		command_complete=TRUE;
 	}
 	if(command_complete) fprintf(COM1,"OK\r\n");

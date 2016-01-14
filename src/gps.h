@@ -27,7 +27,7 @@ boolean pps_done=FALSE;
 void pps_interrupt(void)
 {
 	wallclock_inc_second();
-	time.second_100=0;
+	utc.second_100=0;
 	set_timer3(-20000);
 	#IFDEF OUTPUT_PPS
 	fprintf(COM1,"|");
@@ -39,7 +39,7 @@ void pps_interrupt(void)
 
 void pps_feedback(void)
 {
-	remote_feedback();
+	utc_feedback();
 	if(gps_fix==0) fprintf(COM1,"NO FIX");
 	else if(gps_fix==1) fprintf(COM1,"GPS FIX");
 	else if(gps_fix==2) fprintf(COM1,"DGPS FIX");
@@ -157,15 +157,20 @@ void process_gpzda(void)
 	fprintf(COM1,"*%X\r\n",gpzda_checksum);
 	#ENDIF
 
-	time.hour=(((uint8_t)gpzda_buffer[7]-48)*10)+((uint8_t)gpzda_buffer[8]-48);
-	time.minute=(((uint8_t)gpzda_buffer[9]-48)*10)+((uint8_t)gpzda_buffer[10]-48);
-	time.second=(((uint8_t)gpzda_buffer[11]-48)*10)+((uint8_t)gpzda_buffer[12]-48);
-	if((gps_fix==0)||(satellite_count<4)) time.second_100=(((uint8_t)gpzda_buffer[14]-48)*10)+((uint8_t)gpzda_buffer[15]-48);
-	time.day=(((uint8_t)gpzda_buffer[18]-48)*10)+((uint8_t)gpzda_buffer[19]-48);
-	time.month=(((uint8_t)gpzda_buffer[21]-48)*10)+((uint8_t)gpzda_buffer[22]-48);
-	time.year=(((uint16_t)gpzda_buffer[24]-48)*1000)+(((uint16_t)gpzda_buffer[25]-48)*100)+(((uint16_t)gpzda_buffer[26]-48)*10)+((uint16_t)gpzda_buffer[27]-48);	
+	utc.hour=(((uint8_t)gpzda_buffer[7]-48)*10)+((uint8_t)gpzda_buffer[8]-48);
+	utc.minute=(((uint8_t)gpzda_buffer[9]-48)*10)+((uint8_t)gpzda_buffer[10]-48);
+	utc.second=(((uint8_t)gpzda_buffer[11]-48)*10)+((uint8_t)gpzda_buffer[12]-48);
+	if((gps_fix==0)||(satellite_count<4)) utc.second_100=(((uint8_t)gpzda_buffer[14]-48)*10)+((uint8_t)gpzda_buffer[15]-48);
+	utc.day=(((uint8_t)gpzda_buffer[18]-48)*10)+((uint8_t)gpzda_buffer[19]-48);
+	utc.month=(((uint8_t)gpzda_buffer[21]-48)*10)+((uint8_t)gpzda_buffer[22]-48);
+	utc.year=(((uint16_t)gpzda_buffer[24]-48)*1000)+(((uint16_t)gpzda_buffer[25]-48)*100)+(((uint16_t)gpzda_buffer[26]-48)*10)+((uint16_t)gpzda_buffer[27]-48);	
 
 	if(satellite_count<4)toggle_waiting=TRUE;
+	if(first_fix)
+	{
+		calc_local_time();
+		first_fix=FALSE;
+	}
 	gpzda_offset=0;
 	memset(gpzda_buffer, 0, sizeof(gpzda_buffer));
 }

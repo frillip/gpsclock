@@ -34,11 +34,13 @@ typedef struct {
 	uint8_t minute;
 } offset;
 
-time_struct time = {2015,6,30,0,0,0,0};
+time_struct utc = {2015,6,30,0,0,0,0};
+time_struct local = {2015,6,30,0,0,0,0};
 offset timezone = {0,0};
 
 uint8_t gps_fix=0;
 uint8_t satellite_count=0;
+boolean first_fix=TRUE;
 
 #include "display.h"
 #include "wallclock.h"
@@ -65,57 +67,57 @@ void main(void)
 
 	if(read_eeprom(EEPROM_RESET)==0x42)
 	{
-		time.year=((uint16_t)read_eeprom(EEPROM_YEAR)<<8)|((uint16_t)read_eeprom(EEPROM_YEAR+1));
-		time.month=read_eeprom(EEPROM_MONTH);
-		time.day=read_eeprom(EEPROM_DAY);
-		time.hour=read_eeprom(EEPROM_HOUR);
-		time.minute=read_eeprom(EEPROM_MINUTE);
-		time.second=read_eeprom(EEPROM_SECOND);
+		utc.year=((uint16_t)read_eeprom(EEPROM_YEAR)<<8)|((uint16_t)read_eeprom(EEPROM_YEAR+1));
+		utc.month=read_eeprom(EEPROM_MONTH);
+		utc.day=read_eeprom(EEPROM_DAY);
+		utc.hour=read_eeprom(EEPROM_HOUR);
+		utc.minute=read_eeprom(EEPROM_MINUTE);
+		utc.second=read_eeprom(EEPROM_SECOND);
 		write_eeprom(EEPROM_RESET,0x00);
 	}
 	else
 	{
-		time.second=(((uint8_t)timestr[6]-48)*10)+((uint8_t)timestr[7]-46);
-		time.minute=(((uint8_t)timestr[3]-48)*10)+((uint8_t)timestr[4]-48);
-		time.hour=(((uint8_t)timestr[0]-48)*10)+((uint8_t)timestr[1]-48);		// Parse timestr to time struct
+		utc.second=(((uint8_t)timestr[6]-48)*10)+((uint8_t)timestr[7]-46);
+		utc.minute=(((uint8_t)timestr[3]-48)*10)+((uint8_t)timestr[4]-48);
+		utc.hour=(((uint8_t)timestr[0]-48)*10)+((uint8_t)timestr[1]-48);		// Parse timestr to time struct
 
-		time.day=(((uint8_t)datestr[0]-48)*10)+((uint8_t)datestr[1]-48);
+		utc.day=(((uint8_t)datestr[0]-48)*10)+((uint8_t)datestr[1]-48);
 
 		switch (datestr[3])
 		{
 			case 'J' :
-				if(datestr[4]=='A') time.month=1;
-				else if(datestr[5]=='N')time.month=6;
-				else time.month=7;
+				if(datestr[4]=='A') utc.month=1;
+				else if(datestr[5]=='N')utc.month=6;
+				else utc.month=7;
 				break;
 			case 'F' :
-				time.month=2;
+				utc.month=2;
 				break;
 			case 'M' :
-				if(datestr[5]=='R') time.month=3;
-				else time.month=5;
+				if(datestr[5]=='R') utc.month=3;
+				else utc.month=5;
 				break;
 			case 'A' :
-				if(datestr[4]=='P') time.month=4;
-				else time.month=8;
+				if(datestr[4]=='P') utc.month=4;
+				else utc.month=8;
 				break;
 			case 'S' :
-				time.month=9;
+				utc.month=9;
 				break;
 			case 'O' :
-				time.month=10;
+				utc.month=10;
 				break;
 			case 'N' :
-				time.month=11;
+				utc.month=11;
 				break;
 			case 'D' :
-				time.month=12;
+				utc.month=12;
 				break;
 			default  :
-				time.month=10;
+				utc.month=10;
 				break;
 		}
-		time.year=2000+(((uint8_t)datestr[7]-48)*10)+((uint8_t)datestr[8]-48);
+		utc.year=2000+(((uint8_t)datestr[7]-48)*10)+((uint8_t)datestr[8]-48);
 	}
 
 	timezone.minus_flag=read_eeprom(EEPROM_TZ_MINUS_FLAG);
@@ -167,7 +169,7 @@ void main(void)
 		if(t10ms0==1)
 		{
 			t10ms0=0;
-			if(time.second_100==0&&toggle_waiting)
+			if(utc.second_100==0&&toggle_waiting)
 			{
 				toggle_colon();
 				toggle_waiting=FALSE;
@@ -214,11 +216,11 @@ void main(void)
 			#ENDIF
 			if(display_mode==0)
 			{
-				if((time.second==10)||(time.second==30)||(time.second==50)) mode_switch=TRUE;
+				if((utc.second==10)||(utc.second==30)||(utc.second==50)) mode_switch=TRUE;
 			}
 			else if (display_mode==1)
 			{
-				if((time.second==15)||(time.second==35)||(time.second==55)) mode_switch=TRUE;
+				if((utc.second==15)||(utc.second==35)||(utc.second==55)) mode_switch=TRUE;
 			}
 			if(mode_switch)
 			{
