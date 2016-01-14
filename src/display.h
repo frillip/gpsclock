@@ -7,7 +7,8 @@ void toggle_colon(void);
 
 boolean colon_state=FALSE;
 boolean display_mode=1;
-uint8_t display_toggle=0;
+boolean mode_switch=FALSE;
+boolean toggle_waiting=FALSE;
 uint8_t display_brightness=DISP_BRIGHTEST;
 
 void update_display0(void)

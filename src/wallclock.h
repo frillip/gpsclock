@@ -1,14 +1,18 @@
-#define EEPROM_RESET		0x00
-#define EEPROM_YEAR			0x01
-#define EEPROM_MONTH		0x03
-#define EEPROM_DAY			0x04
-#define EEPROM_HOUR			0x05
-#define EEPROM_MINUTE		0x06
-#define EEPROM_SECOND		0x07
-#define EEPROM_SECOND_100	0x08
+#define EEPROM_RESET			0x00
+#define EEPROM_YEAR				0x01
+#define EEPROM_MONTH			0x03
+#define EEPROM_DAY				0x04
+#define EEPROM_HOUR				0x05
+#define EEPROM_MINUTE			0x06
+#define EEPROM_SECOND			0x07
+#define EEPROM_SECOND_100		0x08
+#define EEPROM_TZ_MINUS_FLAG	0x09
+#define EEPROM_TZ_HOUR			0x10
+#define EEPROM_TZ_MINUTE		0x11
 
 boolean negative_flag=FALSE;
 boolean overdue_flag=FALSE;
+boolean inc_minute_flag=FALSE;
 static uint8_t month_days[13]={0,31,28,31,30,31,30,31,31,30,31,30,31};
 
 void wallclock_inc_year()
@@ -82,7 +86,7 @@ void wallclock_inc_second(void)
 	if(time.second>=60)
 	{
 		time.second=0;
-		wallclock_inc_minute();
+		inc_minute_flag=TRUE;
 	}
 }
 
@@ -92,9 +96,6 @@ void wallclock_inc_sec_100(void)
 	if(time.second_100>=100)
 	{
 		time.second_100=0;
-		#IFNDEF PPS
-		if((gps_fix==0)||(satellite_count<4))wallclock_inc_second();
-		#ENDIF
 	}
 }
 

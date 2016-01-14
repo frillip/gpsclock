@@ -3,8 +3,8 @@ void remote_command(void);
 void remote_feedback(void);
 
 uint8_t command_offset=0;
-char command[16];
-char command_buffer[13];
+char command[128];
+char command_buffer[128];
 
 boolean command_incoming=FALSE;
 boolean command_waiting=FALSE;
@@ -63,7 +63,7 @@ void remote_command(void)
 			return;
 		}
 		command_offset++;
-		if(command_offset==16)
+		if(command_offset==128)
 		{
 			command_incoming=FALSE;
 			memset(command, 0, sizeof(command_buffer));
@@ -143,9 +143,22 @@ else if(strncmp(command_buffer,"DATE",4))
 	}
 else if(strncmp(command_buffer,"BRIGHT",6))
 	{
-		display_brightness=(((uint8_t)command_buffer[6]-48)*100)+(((uint8_t)command_buffer[7]-48)*10)+((uint8_t)command_buffer[8]-48);
+		if((command_buffer[8])&&(((uint8_t)command_buffer[6]-48)<3))display_brightness=(((uint8_t)command_buffer[6]-48)*100)+(((uint8_t)command_buffer[7]-48)*10)+((uint8_t)command_buffer[8]-48);
+		else if(command_buffer[7])display_brightness=(((uint8_t)command_buffer[7]-48)*10)+((uint8_t)command_buffer[8]-48);
+		else if(command_buffer[6])display_brightness=(uint8_t)command_buffer[6]-48;
 		update_brightness();
 		brightness_feedback();
+		command_complete=TRUE;
+	}
+else if(strncmp(command_buffer,"TIMEZONE",8))
+	{
+		timezone.hour=(((uint8_t)command_buffer[8]-48)*10)+((uint8_t)command_buffer[9]-48);
+		if(timezone.hour>14)timezone.hour=0;
+		timezone.minute=(((uint8_t)command_buffer[10]-48)*10)+((uint8_t)command_buffer[11]-48);
+		if(timezone.minute>45)timezone.minute=0;
+		write_eeprom(EEPROM_TZ_HOUR,timezone.hour);
+		write_eeprom(EEPROM_TZ_MINUTE,timezone.minute);
+		remote_feedback();
 		command_complete=TRUE;
 	}
 	if(command_complete) fprintf(COM1,"OK\r\n");

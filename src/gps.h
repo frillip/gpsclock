@@ -27,10 +27,13 @@ boolean pps_done=FALSE;
 void pps_interrupt(void)
 {
 	wallclock_inc_second();
+	time.second_100=0;
+	set_timer3(-20000);
 	#IFDEF OUTPUT_PPS
 	fprintf(COM1,"|");
 	#ENDIF
 	pps_waiting=TRUE;
+	toggle_waiting=TRUE;
 }
 #ENDIF
 
@@ -162,6 +165,7 @@ void process_gpzda(void)
 	time.month=(((uint8_t)gpzda_buffer[21]-48)*10)+((uint8_t)gpzda_buffer[22]-48);
 	time.year=(((uint16_t)gpzda_buffer[24]-48)*1000)+(((uint16_t)gpzda_buffer[25]-48)*100)+(((uint16_t)gpzda_buffer[26]-48)*10)+((uint16_t)gpzda_buffer[27]-48);	
 
+	if(satellite_count<4)toggle_waiting=TRUE;
 	gpzda_offset=0;
 	memset(gpzda_buffer, 0, sizeof(gpzda_buffer));
 }

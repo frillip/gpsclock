@@ -3,7 +3,7 @@
 #fuses NOPROTECT,HSH,PLLEN,WDT,WDT128 //,SOSC_LOW
 #use delay(clock=64000000,crystal=16000000)
 #use rs232(baud=115200,parity=N,xmit=PIN_C6,rcv=PIN_C7,bits=8,ERRORS,stream=COM1,restart_wdt)	// TTL serial for AT commands
-#use rs232(baud=115200,parity=N,xmit=PIN_B6,rcv=PIN_B7,bits=8,ERRORS,stream=COM2,restart_wdt)	// TTL serial for GPS
+#use rs232(baud=9600,parity=N,xmit=PIN_B6,rcv=PIN_B7,bits=8,ERRORS,stream=COM2,restart_wdt)	// TTL serial for GPS
 #include "stdint.h"				// Standard int types
 
 #define PPS				// We have a PPS input attached to PIN_B0 (INT_EXT0)
@@ -29,8 +29,9 @@ typedef struct {
 } time_struct;
 
 typedef struct {
-	int8_t hour;
-	int8_t minute;
+	uint8_t minus_flag;
+	uint8_t hour;
+	uint8_t minute;
 } offset;
 
 time_struct time = {2015,6,30,0,0,0,0};
@@ -49,8 +50,8 @@ void main(void)
 {
 	setup_adc(ADC_OFF);							// No analogue inputs
 	setup_wdt(WDT_ON);							// WDT on
-//	setup_timer_1(T1_EXTERNAL | T1_ENABLE_SOSC);	// Set up the timekeeping timer
 	setup_timer_2(T2_DIV_BY_1, 0x1F, 1);		// Our SPI 7 segment displays only operate up to 250kHz, so we have to set up the SPI clock using timer2
+	setup_timer_1(T1_INTERNAL | T1_DIV_BY_8);
 	setup_timer_3(T3_INTERNAL | T3_DIV_BY_8);	// Set up scheduler timer
 	#IFDEF PPS
 	enable_interrupts(INT_EXT_L2H);				// PPS interrupt
@@ -58,7 +59,7 @@ void main(void)
 //	enable_interrupts(INT_EXT1);				// GPS fix interrupt
 	enable_interrupts(INT_RDA);					// Enable AT command serial interrupt
 	enable_interrupts(INT_RDA2);				// Enable GPS serial interrupt
-	enable_interrupts(INT_TIMER1);				// Enable timekeeping timer interrupt
+//	enable_interrupts(INT_TIMER1);				// Enable timekeeping timer interrupt
 	enable_interrupts(INT_TIMER3);				// Enable scheduler timer interrupt
 	enable_interrupts(GLOBAL);					// Enable interrupts globally
 
@@ -116,17 +117,40 @@ void main(void)
 		}
 		time.year=2000+(((uint8_t)datestr[7]-48)*10)+((uint8_t)datestr[8]-48);
 	}
+
+	timezone.minus_flag=read_eeprom(EEPROM_TZ_MINUS_FLAG);
+	if(timezone.minus_flag>1)
+	{
+		timezone.minus_flag=0;
+		write_eeprom(EEPROM_TZ_MINUS_FLAG,timezone.minus_flag);
+	}
+	timezone.hour=read_eeprom(EEPROM_TZ_HOUR);
+	if(timezone.hour>14)
+	{
+		timezone.hour=0;
+		write_eeprom(EEPROM_TZ_HOUR,timezone.hour);
+	}
+	timezone.minute=read_eeprom(EEPROM_TZ_MINUTE);
+	if(timezone.minute>45)
+	{
+		timezone.minute=0;
+		write_eeprom(EEPROM_TZ_MINUTE,timezone.minute);
+	}
+
 	memset(command_buffer, 0, sizeof(command_buffer));
 	memset(command, 0, sizeof(command));
-	delay_ms(500);
-	fprintf(COM2,"$PMTK251,115200*1F\r\n");
-	fprintf(COM2,"$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0*28\r\n");
 	
-	delay_ms(50);
+	set_uart_speed(9600,COM2);
+	
+	delay_ms(200);
+	
+	fprintf(COM2,"$PMTK251,115200*1F\r\n");
+	
+	delay_ms(200);
+	
+	set_uart_speed(115200,COM2);
 
-	//#use rs232(baud=115200,parity=N,xmit=PIN_B6,rcv=PIN_B7,bits=8,ERRORS,stream=COM2,restart_wdt)	// TTL serial for GPS
-
-	delay_ms(50);
+	fprintf(COM2,"$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0*28\r\n");
 
 	restart_wdt();
 	init_display();
@@ -143,11 +167,21 @@ void main(void)
 		if(t10ms0==1)
 		{
 			t10ms0=0;
+			if(time.second_100==0&&toggle_waiting)
+			{
+				toggle_colon();
+				toggle_waiting=FALSE;
+			}
 			wallclock_inc_sec_100();
 			if(display_mode==0)
 			{
 				update_display0();
 				update_display1();
+			}
+			if(inc_minute_flag)
+			{
+				wallclock_inc_minute();
+				inc_minute_flag=FALSE;
 			}
 			#IFDEF OUTPUT_FEEDBACK
 			if(pps_waiting) pps_feedback();
@@ -167,21 +201,29 @@ void main(void)
 		if(t1s0==1)
 		{
 			t1s0=0;
-			#IFNDEF PPS
+			#IFDEF PPS
+			//if((gps_fix==0)||(satellite_count<4)) wallclock_inc_second();
+			#ELSE
 			wallclock_inc_second();
 			#ENDIF
-			toggle_colon();
 			update_display0();
 			update_display1();
 			#IFDEF OUTPUT_FEEDBACK
 			if(pps_done==FALSE) pps_feedback();
 			pps_done=FALSE;
 			#ENDIF
-			if(time.second%5==0) display_toggle++;
-			if(((display_toggle>=3)&&(display_mode==0))||((display_toggle>=1)&&(display_mode==1)))
+			if(display_mode==0)
 			{
-				display_toggle=0;
+				if((time.second==10)||(time.second==30)||(time.second==50)) mode_switch=TRUE;
+			}
+			else if (display_mode==1)
+			{
+				if((time.second==15)||(time.second==35)||(time.second==55)) mode_switch=TRUE;
+			}
+			if(mode_switch)
+			{
 				display_mode=!display_mode;
+				mode_switch=false;
 				output_low(DISP0_SS);
 				output_low(DISP1_SS);
 				#asm nop #endasm
