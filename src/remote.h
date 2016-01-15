@@ -173,6 +173,7 @@ else if(strncmp(command_buffer,"TIMEZONE",8))
 			if(timezone.hour>14)timezone.hour=0;
 			timezone.minute=(((uint8_t)command_buffer[11]-48)*10)+((uint8_t)command_buffer[12]-48);
 			if(timezone.minute>45)timezone.minute=0;
+			if((!timezone.hour)&&(!timezone.minute)) timezone.minus_flag=FALSE;
 			write_eeprom(EEPROM_TZ_HOUR,timezone.hour);
 			write_eeprom(EEPROM_TZ_MINUTE,timezone.minute);
 		}

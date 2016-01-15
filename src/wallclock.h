@@ -24,7 +24,34 @@ void calc_local_time(void)
 	local.year=utc.year;
 	if(timezone.hour||timezone.minute)
 	{
-		if(timezone.minus_flag) local.minute=local.minute;		
+		if(timezone.minus_flag)
+		{
+			local.minute=local.minute-timezone.minute;
+			if(local.minute>60)
+			{
+				local.minute=local.minute+60;
+				local.hour--;
+			}
+			local.hour=local.hour-timezone.hour;
+			if(local.hour>24)
+			{
+				local.hour=local.hour+24;
+				local.day--;
+			}
+			if(local.day>31)
+			{
+				local.month--;
+				if(local.month>12)
+				{
+					local.month=local.month+12;
+					local.year--;
+				}
+				if((local.month==2)&&((local.year%4!=0)||(local.year%10==0))) local.day=local.day+28;
+				else if ((local.month==2)&&((local.year%4==0)&&(local.year%10!=0))) local.day=local.day+29;
+				else if ((local.month==4)||(local.month==6)||(local.month==9)||(local.month==11)) local.day=local.day+30;
+				else local.day=local.day+31;
+			}
+		}
 		else
 		{
 			local.minute=local.minute+timezone.minute;
