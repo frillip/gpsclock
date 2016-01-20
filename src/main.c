@@ -182,6 +182,7 @@ void main(void)
 			}
 			if(inc_minute_flag)
 			{
+				calc_local_time();
 				wallclock_inc_minute();
 				inc_minute_flag=FALSE;
 			}
