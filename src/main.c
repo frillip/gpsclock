@@ -10,7 +10,7 @@
 //#define OUTPUT_PPS
 #define OUTPUT_FEEDBACK
 //#define OUTPUT_NMEA		// Output recieved GPZDA and GPGGA messages
-//#define OUTPUT_ALL_GPS	// Output EVERYTHING recieved on the GPS UART
+#define OUTPUT_ALL_GPS	// Output EVERYTHING recieved on the GPS UART
 #define DISP0_SS PIN_B4	// SS pin for display 0
 #define DISP1_SS PIN_B5	// SS pin for display 1
 
@@ -169,6 +169,7 @@ void main(void)
 		if(t10ms0==1)
 		{
 			t10ms0=0;
+			if(gpgga_waiting) process_gpgga();
 			if(utc.second_100==0&&toggle_waiting)
 			{
 				toggle_colon();
@@ -182,7 +183,6 @@ void main(void)
 			}
 			if(inc_minute_flag)
 			{
-				calc_local_time();
 				wallclock_inc_minute();
 				inc_minute_flag=FALSE;
 			}
@@ -195,7 +195,6 @@ void main(void)
 			t100ms0=0;
 			if(command_waiting) process_command();
 			if(gpzda_waiting) process_gpzda();
-			if(gpgga_waiting) process_gpgga();
 		}
 		if(t100ms1==5)
 		{

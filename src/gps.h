@@ -168,9 +168,9 @@ void process_gpzda(void)
 	if(satellite_count<4)toggle_waiting=TRUE;
 	if(first_fix)
 	{
-		calc_local_time();
 		first_fix=FALSE;
 	}
+	calc_local_time();
 	gpzda_offset=0;
 	memset(gpzda_buffer, 0, sizeof(gpzda_buffer));
 }
