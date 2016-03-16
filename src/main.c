@@ -10,7 +10,7 @@
 //#define OUTPUT_PPS
 #define OUTPUT_FEEDBACK
 //#define OUTPUT_NMEA		// Output recieved GPZDA and GPGGA messages
-#define OUTPUT_ALL_GPS	// Output EVERYTHING recieved on the GPS UART
+//#define OUTPUT_ALL_GPS	// Output EVERYTHING recieved on the GPS UART
 #define DISP0_SS PIN_B4	// SS pin for display 0
 #define DISP1_SS PIN_B5	// SS pin for display 1
 

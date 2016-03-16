@@ -137,7 +137,8 @@ void toggle_colon(void)
 		// Dots
 		spi_write(0x77);
 		// Colon or no colon
-		spi_write((uint8_t)colon_state<<1);
+		if(gps_fix)	spi_write((uint8_t)colon_state<<1|0x08);
+		else spi_write((uint8_t)colon_state<<1);
 		// Deselect display
 		#asm nop #endasm
 		output_high(DISP1_SS);
