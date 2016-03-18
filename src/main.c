@@ -6,10 +6,6 @@
 #use rs232(baud=9600,parity=N,xmit=PIN_B6,rcv=PIN_B7,bits=8,ERRORS,stream=COM2,restart_wdt)	// TTL serial for GPS
 #include "stdint.h"				// Standard int types
 
-//#define OUTPUT_PPS
-#define OUTPUT_FEEDBACK
-//#define OUTPUT_NMEA		// Output recieved GPZDA and GPGGA messages
-//#define OUTPUT_ALL_GPS	// Output EVERYTHING recieved on the GPS UART
 #define DISP0_SS PIN_B4	// SS pin for display 0
 #define DISP1_SS PIN_B5	// SS pin for display 1
 
@@ -36,6 +32,12 @@ typedef struct {
 time_struct utc = {2015,6,30,0,0,0,0};
 time_struct local = {2015,6,30,0,0,0,0};
 offset timezone = {0,0};
+
+boolean CMD_ECHO=true;			// Echo characters back (for humans)
+boolean OUTPUT_PPS=false;		// Send '|' on PPS interrupt
+boolean OUTPUT_FEEDBACK=false;	// Send date and time over serial
+boolean OUTPUT_NMEA=false;		// Output recieved GPZDA and GPGGA messages
+boolean OUTPUT_ALL_GPS=false;	// Output EVERYTHING recieved on the GPS UART
 
 uint8_t gps_fix=0;
 uint8_t satellite_count=0;
@@ -82,6 +84,7 @@ void main(void)
 		if(t10ms0==1)
 		{
 			t10ms0=0;
+			if(command_waiting) process_command();
 			if(gpgga_waiting) process_gpgga();
 			if(utc.second_100==0&&toggle_waiting)
 			{
@@ -99,14 +102,20 @@ void main(void)
 				update_display0();
 				update_display1();
 			}
-			#IFDEF OUTPUT_FEEDBACK
-			if(pps_waiting) pps_feedback();
-			#ENDIF
+			if(OUTPUT_FEEDBACK)	if(pps_waiting) pps_feedback();
+			if(command_timeout)
+			{
+				command_timeout--;
+				if(!command_timeout) 
+				{
+					fprintf(COM1,"*\r\n");
+					clear_cmd_buffers();
+				}
+			}
 		}
 		if(t100ms0==1)
 		{
 			t100ms0=0;
-			if(command_waiting) process_command();
 			if(gpzda_waiting) process_gpzda();
 		}
 		if(t100ms1==5)
@@ -116,10 +125,11 @@ void main(void)
 		if(t1s0==1)
 		{
 			t1s0=0;
-			#IFDEF OUTPUT_FEEDBACK
-			if(pps_done==FALSE) pps_feedback();
-			pps_done=FALSE;
-			#ENDIF
+			if(OUTPUT_FEEDBACK)
+			{
+				if(pps_done==FALSE) pps_feedback();
+				pps_done=FALSE;
+			}
 			if(display_mode==0)
 			{
 				if((utc.second==10)||(utc.second==30)||(utc.second==50)) mode_switch=TRUE;

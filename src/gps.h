@@ -28,39 +28,37 @@ void pps_interrupt(void)
 	wallclock_inc_second();
 	utc.second_100=0;
 	set_timer3(-20000);
-	#IFDEF OUTPUT_PPS
-	fprintf(COM1,"|");
-	#ENDIF
+
+	if(OUTPUT_PPS) fprintf(COM1,"|");
+
 	pps_waiting=TRUE;
 	toggle_waiting=TRUE;
 }
 
 void pps_feedback(void)
 {
-	utc_feedback();
-	if(gps_fix==0) fprintf(COM1,"NO FIX");
-	else if(gps_fix==1) fprintf(COM1,"GPS FIX");
-	else if(gps_fix==2) fprintf(COM1,"DGPS FIX");
-	if(satellite_count==0xFF) fprintf(COM1,": NO SATELLITE COUNT!\r\n");
-	else fprintf(COM1,": %u SATELLITES\r\n",satellite_count);
+	if(!command_timeout) 
+	{
+		utc_feedback();
+		if(gps_fix==0) fprintf(COM1,"NO FIX");
+		else if(gps_fix==1) fprintf(COM1,"GPS FIX");
+		else if(gps_fix==2) fprintf(COM1,"DGPS FIX");
+		if(satellite_count==0xFF) fprintf(COM1,": NO SATELLITE COUNT!\r\n");
+		else fprintf(COM1,": %u SATELLITES\r\n",satellite_count);
+	}
 
 	pps_waiting=FALSE;
 	pps_done=TRUE;
-}
-
-#INT_EXT1
-void check_fix(void)
-{
-	//gps_fix=input(PIN_B1);
 }
 
 #INT_RDA2
 void gps_message(void)
 {
 	gps_buffer[gps_offset]=fgetc(COM2);
-	#IFDEF OUTPUT_ALL_GPS
-	fprintf(COM1,"%c",gps_buffer[gps_offset]);
-	#ENDIF
+	if(OUTPUT_ALL_GPS)
+	{
+		if(!command_timeout) fprintf(COM1,"%c",gps_buffer[gps_offset]);
+	}	
 	if(gpzda_incoming)
 	{
 		gpzda_buffer[gpzda_offset]=gps_buffer[gps_offset];
@@ -151,20 +149,23 @@ void process_gpzda(void)
 	// Calculate checksum
 	uint8_t i=0;
 	gpzda_checksum=0x00;
-	#IFDEF OUTPUT_NMEA
-	fprintf(COM1,"%c",gpzda_buffer[i]);
-	#ENDIF
+	if(OUTPUT_NMEA)
+	{
+		if(!command_timeout) fprintf(COM1,"%c",gpzda_buffer[i]);
+	}
 	while(i<gpzda_offset-4)
 	{
 		i++;
-		#IFDEF OUTPUT_NMEA
-		fprintf(COM1,"%c",gpzda_buffer[i]); 
-		#ENDIF
+		if(OUTPUT_NMEA)
+		{
+			if(!command_timeout) fprintf(COM1,"%c",gpzda_buffer[i]); 
+		}
 		gpzda_checksum^=gpzda_buffer[i];
 	}
-	#IFDEF OUTPUT_NMEA
-	fprintf(COM1,"*%X\r\n",gpzda_checksum);
-	#ENDIF
+	if(OUTPUT_NMEA)
+	{
+		if(!command_timeout) fprintf(COM1,"*%X\r\n",gpzda_checksum);
+	}
 
 	utc.hour=(((uint8_t)gpzda_buffer[7]-48)*10)+((uint8_t)gpzda_buffer[8]-48);
 	utc.minute=(((uint8_t)gpzda_buffer[9]-48)*10)+((uint8_t)gpzda_buffer[10]-48);
@@ -190,20 +191,23 @@ void process_gpgga(void)
 	// Calculate checksum
 	uint8_t i=0;
 	gpgga_checksum=0x00;
-	#IFDEF OUTPUT_NMEA
-	fprintf(COM1,"%c",gpgga_buffer[i]);
-	#ENDIF
+	if(OUTPUT_NMEA)
+	{
+		if(!command_timeout) fprintf(COM1,"%c",gpgga_buffer[i]);
+	}
 	while(i<gpgga_offset-4)
 	{
 		i++;
-		#IFDEF OUTPUT_NMEA
-		fprintf(COM1,"%c",gpgga_buffer[i]);
-		#ENDIF
+		if(OUTPUT_NMEA)
+		{
+			if(!command_timeout) fprintf(COM1,"%c",gpgga_buffer[i]);
+		}
 		gpgga_checksum^=gpgga_buffer[i];
 	}
-	#IFDEF OUTPUT_NMEA
-	fprintf(COM1,"*%X\r\n",gpgga_checksum);
-	#ENDIF
+	if(OUTPUT_NMEA)
+	{
+		if(!command_timeout) fprintf(COM1,"*%X\r\n",gpgga_checksum);
+	}
 
 	i=0;
 	uint8_t gpgga_field=0;
