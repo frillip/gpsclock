@@ -68,6 +68,20 @@ void update_display1(void)
 	output_high(DISP1_SS);
 }
 
+void reset_display(void)
+{
+	// Reset display
+	output_low(DISP0_SS);
+	output_low(DISP1_SS);
+	#asm nop #endasm
+	spi_write(0x76); // reset
+	spi_write(0x7A);  	// max brightness
+	spi_write(DISP_BRIGHTEST);
+	#asm nop #endasm
+	output_high(DISP0_SS);
+	output_high(DISP1_SS);
+}
+
 void init_display(void)
 {
 	// Set SS high
@@ -76,43 +90,9 @@ void init_display(void)
 	// SPI at 250kHz
 	setup_spi(SPI_MASTER|SPI_L_TO_H|SPI_XMIT_L_TO_H|SPI_CLK_T2);
 	// Wait for both displays to boot
-	delay_ms(100);
+	delay_ms(200);
 
-	// Reset display0, turn on colon
-	output_low(DISP0_SS);
-	output_low(DISP1_SS);
-	#asm nop #endasm
-	spi_write(0x82);
-	spi_write(0x00);
-	// reset
-	spi_write(0x76);
-	// dots
-	spi_write(0x77);
-	// colon
-	spi_write(0x02);
-	// max brightness
-	spi_write(0x7A);
-	spi_write(DISP_BRIGHTEST);
-	#asm nop #endasm
-	output_high(DISP0_SS);
-	output_high(DISP1_SS);
-
-	// fill with initial time (force)
-	output_low(DISP0_SS);
-	#asm nop #endasm
-	spi_write(0x76);
-	#asm nop #endasm
-	output_high(DISP0_SS);
-	delay_us(10);
-	update_display0();
-
-	output_low(DISP1_SS);
-	#asm nop #endasm
-	spi_write(0x76);
-	#asm nop #endasm
-	output_high(DISP1_SS);
-	delay_us(10);
-	update_display1();
+	reset_display();
 }
 
 void toggle_colon(void)

@@ -52,7 +52,7 @@ void main(void)
 {
 	setup_adc(ADC_OFF);							// No analogue inputs
 	setup_wdt(WDT_ON);							// WDT on
-	setup_timer_2(T2_DIV_BY_1, 0x1F, 1);		// Our SPI 7 segment displays only operate up to 250kHz, so we have to set up the SPI clock using timer2
+	setup_timer_2(T2_DIV_BY_1, 0x20, 1);		// Our SPI 7 segment displays only operate up to 250kHz, so we have to set up the SPI clock using timer2
 	setup_timer_1(T1_INTERNAL | T1_DIV_BY_8);
 	setup_timer_3(T3_INTERNAL | T3_DIV_BY_8);	// Set up scheduler timer
 	#IFDEF PPS
@@ -141,25 +141,23 @@ void main(void)
 
 	memset(command_buffer, 0, sizeof(command_buffer));
 	memset(command, 0, sizeof(command));
-	
-	set_uart_speed(9600,COM2);
-	
-	delay_ms(200);
-	
-	fprintf(COM2,"$PMTK251,115200*1F\r\n");
-	
-	delay_ms(200);
-	
-	set_uart_speed(115200,COM2);
 
+	init_display();
+
+	delay_ms(50);
+	set_uart_speed(9600,COM2);
+	fprintf(COM2,"$PMTK251,115200*1F\r\n");
+
+	update_display0();
+	update_display1();
+
+	delay_ms(50);
+	set_uart_speed(115200,COM2);
 	fprintf(COM2,"$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0*28\r\n");
 
 	restart_wdt();
-	init_display();
 
 	fprintf(COM1, "HELLO!\r\n");	// Say hello!
-
-
 
 	reset_scheduler();			// Reset and set scheduler
 //	set_timer1(-32768);			// Begin timekeeping
