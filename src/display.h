@@ -119,7 +119,7 @@ void toggle_colon(void)
 {
 	if(display_mode==0)
 	{
-		colon_state = ! colon_state;
+		colon_state = !(utc.second%2);
 		// Display0
 		output_low(DISP0_SS);
 		#asm nop #endasm

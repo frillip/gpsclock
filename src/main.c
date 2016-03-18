@@ -176,15 +176,15 @@ void main(void)
 				toggle_waiting=FALSE;
 			}
 			wallclock_inc_sec_100();
-			if(display_mode==0)
-			{
-				update_display0();
-				update_display1();
-			}
 			if(inc_minute_flag)
 			{
 				wallclock_inc_minute();
 				inc_minute_flag=FALSE;
+			}
+			if(display_mode==0)
+			{
+				update_display0();
+				update_display1();
 			}
 			#IFDEF OUTPUT_FEEDBACK
 			if(pps_waiting) pps_feedback();
@@ -208,8 +208,6 @@ void main(void)
 			#ELSE
 			wallclock_inc_second();
 			#ENDIF
-			update_display0();
-			update_display1();
 			#IFDEF OUTPUT_FEEDBACK
 			if(pps_done==FALSE) pps_feedback();
 			pps_done=FALSE;
@@ -235,9 +233,9 @@ void main(void)
 				output_high(DISP1_SS);
 				delay_us(10);
 				toggle_colon();
-				update_display0();
-				update_display1();
 			}
+			update_display0();
+			update_display1();
 		}
 	}
 }
