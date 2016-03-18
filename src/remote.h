@@ -170,6 +170,26 @@ void process_command(void)
 		command_complete=TRUE;
 	}
 
+	else if(strncmp(command_buffer,"TIMEZONE",8))
+	{
+		if(command_buffer[12])
+		{
+			if(command_buffer[8]=='-')timezone.minus_flag=TRUE;
+			else timezone.minus_flag=FALSE;
+			timezone.hour=(((uint8_t)command_buffer[9]-48)*10)+((uint8_t)command_buffer[10]-48);
+			if(timezone.hour>14)timezone.hour=0;
+			timezone.minute=(((uint8_t)command_buffer[11]-48)*10)+((uint8_t)command_buffer[12]-48);
+			if(timezone.minute>45)timezone.minute=0;
+			if((!timezone.hour)&&(!timezone.minute)) timezone.minus_flag=FALSE;
+			write_eeprom(EEPROM_TZ_HOUR,timezone.hour);
+			write_eeprom(EEPROM_TZ_MINUTE,timezone.minute);
+		}
+		calc_local_time();
+		utc_feedback();
+		local_feedback();
+		command_complete=TRUE;
+	}
+
 	else if(strncmp(command_buffer,"TIME",4))
 	{
 		local_time_feedback();
@@ -189,26 +209,6 @@ void process_command(void)
 		else if(command_buffer[6])display_brightness=(uint8_t)command_buffer[6]-48;
 		update_brightness();
 		brightness_feedback();
-		command_complete=TRUE;
-	}
-
-	else if(strncmp(command_buffer,"TIMEZONE",8))
-	{
-		if(command_buffer[12])
-		{
-			if(command_buffer[8]=='-')timezone.minus_flag=TRUE;
-			else timezone.minus_flag=FALSE;
-			timezone.hour=(((uint8_t)command_buffer[9]-48)*10)+((uint8_t)command_buffer[10]-48);
-			if(timezone.hour>14)timezone.hour=0;
-			timezone.minute=(((uint8_t)command_buffer[11]-48)*10)+((uint8_t)command_buffer[12]-48);
-			if(timezone.minute>45)timezone.minute=0;
-			if((!timezone.hour)&&(!timezone.minute)) timezone.minus_flag=FALSE;
-			write_eeprom(EEPROM_TZ_HOUR,timezone.hour);
-			write_eeprom(EEPROM_TZ_MINUTE,timezone.minute);
-		}
-		calc_local_time();
-		utc_feedback();
-		local_feedback();
 		command_complete=TRUE;
 	}
 
