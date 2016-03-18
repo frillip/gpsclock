@@ -273,3 +273,80 @@ void calc_diff(time_struct target, time_struct current, time_struct result) {
           else printf("%u seconds.",result.second);
      }
 }
+
+void restore_time(void)
+{
+	if(read_eeprom(EEPROM_RESET)==0x42)
+	{
+		utc.year=((uint16_t)read_eeprom(EEPROM_YEAR)<<8)|((uint16_t)read_eeprom(EEPROM_YEAR+1));
+		utc.month=read_eeprom(EEPROM_MONTH);
+		utc.day=read_eeprom(EEPROM_DAY);
+		utc.hour=read_eeprom(EEPROM_HOUR);
+		utc.minute=read_eeprom(EEPROM_MINUTE);
+		utc.second=read_eeprom(EEPROM_SECOND);
+		write_eeprom(EEPROM_RESET,0x00);
+	}
+	else
+	{
+		utc.second=(((uint8_t)timestr[6]-48)*10)+((uint8_t)timestr[7]-46);
+		utc.minute=(((uint8_t)timestr[3]-48)*10)+((uint8_t)timestr[4]-48);
+		utc.hour=(((uint8_t)timestr[0]-48)*10)+((uint8_t)timestr[1]-48);		// Parse timestr to time struct
+
+		utc.day=(((uint8_t)datestr[0]-48)*10)+((uint8_t)datestr[1]-48);
+
+		switch (datestr[3])
+		{
+			case 'J' :
+				if(datestr[4]=='A') utc.month=1;
+				else if(datestr[5]=='N')utc.month=6;
+				else utc.month=7;
+				break;
+			case 'F' :
+				utc.month=2;
+				break;
+			case 'M' :
+				if(datestr[5]=='R') utc.month=3;
+				else utc.month=5;
+				break;
+			case 'A' :
+				if(datestr[4]=='P') utc.month=4;
+				else utc.month=8;
+				break;
+			case 'S' :
+				utc.month=9;
+				break;
+			case 'O' :
+				utc.month=10;
+				break;
+			case 'N' :
+				utc.month=11;
+				break;
+			case 'D' :
+				utc.month=12;
+				break;
+			default  :
+				utc.month=10;
+				break;
+		}
+		utc.year=2000+(((uint8_t)datestr[7]-48)*10)+((uint8_t)datestr[8]-48);
+	}
+
+	timezone.minus_flag=read_eeprom(EEPROM_TZ_MINUS_FLAG);
+	if(timezone.minus_flag>1)
+	{
+		timezone.minus_flag=0;
+		write_eeprom(EEPROM_TZ_MINUS_FLAG,timezone.minus_flag);
+	}
+	timezone.hour=read_eeprom(EEPROM_TZ_HOUR);
+	if(timezone.hour>14)
+	{
+		timezone.hour=0;
+		write_eeprom(EEPROM_TZ_HOUR,timezone.hour);
+	}
+	timezone.minute=read_eeprom(EEPROM_TZ_MINUTE);
+	if(timezone.minute>45)
+	{
+		timezone.minute=0;
+		write_eeprom(EEPROM_TZ_MINUTE,timezone.minute);
+	}
+}

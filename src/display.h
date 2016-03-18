@@ -68,6 +68,12 @@ void update_display1(void)
 	output_high(DISP1_SS);
 }
 
+void update_display(void)
+{
+	update_display0();
+	update_display1();
+}
+
 void reset_display(void)
 {
 	// Reset display
@@ -75,8 +81,6 @@ void reset_display(void)
 	output_low(DISP1_SS);
 	#asm nop #endasm
 	spi_write(0x76); // reset
-	spi_write(0x7A);  	// max brightness
-	spi_write(DISP_BRIGHTEST);
 	#asm nop #endasm
 	output_high(DISP0_SS);
 	output_high(DISP1_SS);

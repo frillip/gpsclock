@@ -11,6 +11,12 @@ boolean command_incoming=FALSE;
 boolean command_waiting=FALSE;
 boolean command_complete=FALSE;
 
+void clear_cmd_buffers()
+{
+	memset(command_buffer, 0, sizeof(command_buffer));
+	memset(command, 0, sizeof(command));
+}
+
 void utc_feedback(void)
 {
 	fprintf(COM1,"\r\n%04lu-%02u-%02uT%02u:%02u:%02u",utc.year,utc.month,utc.day,utc.hour,utc.minute,utc.second);

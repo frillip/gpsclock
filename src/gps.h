@@ -22,7 +22,6 @@ boolean gpgga_checksum_error=0;
 boolean pps_waiting=FALSE;
 boolean pps_done=FALSE;
 
-#IFDEF PPS
 #INT_EXT
 void pps_interrupt(void)
 {
@@ -35,7 +34,6 @@ void pps_interrupt(void)
 	pps_waiting=TRUE;
 	toggle_waiting=TRUE;
 }
-#ENDIF
 
 void pps_feedback(void)
 {
@@ -134,6 +132,17 @@ void gps_message(void)
 			memset(gps_buffer, 0, sizeof(gps_buffer));
 		}
 	}
+}
+
+void init_gps_uart(void)
+{
+	delay_ms(50);
+	set_uart_speed(9600,COM2);
+	fprintf(COM2,"$PMTK251,115200*1F\r\n");
+
+	delay_ms(50);
+	set_uart_speed(115200,COM2);
+	fprintf(COM2,"$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0*28\r\n");
 }
 
 void process_gpzda(void)
